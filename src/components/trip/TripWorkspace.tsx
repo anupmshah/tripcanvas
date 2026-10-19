@@ -12,9 +12,9 @@ import PriceLabel from "./PriceLabel";
 import FlightOffers from "./FlightOffers";
 import type { Weather } from "./shared";
 
-export default function TripWorkspace({ initial }: { initial: TripDTO }) {
+export default function TripWorkspace({ initial, initialWarning = "" }: { initial: TripDTO; initialWarning?: string }) {
   const [dto, setDto] = useState(initial);
-  const [msg, setMsg] = useState("");
+  const [msg, setMsg] = useState(initialWarning);
   const [weather, setWeather] = useState<Record<string, Weather>>({});
   const [selected, setSelected] = useState<string | null>(null);
   const [details, setDetails] = useState<ItemDTO | null>(null);

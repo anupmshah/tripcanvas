@@ -26,6 +26,7 @@ ${JSON.stringify(EXAMPLE)}
 
 Trip structure: the trip is an ordered list of stops (cities). Each stop has "nights"; the schedule has one day per night plus a final departure day that belongs to the last stop. Days are indexed from 0 across the whole trip. A travel day belongs to the city you sleep in that night.
 Rules:
+- Item start/end are ONLY a local 24-hour HH:MM string (example "09:00") or null. NEVER put YYYY-MM-DD or a datetime in them. Trip dates belong to days; unknown flight times should be null.
 - Human "day N" always means dayIndex N-1 (day 1 = 0, day 4 = 3). Do not confuse a displayed day number with its index.
 - Ops run in order. Put stop ops (addStop, removeStop, reorderStops, setStopNights) BEFORE item ops; dayIndex in item ops refers to the schedule AFTER all earlier ops in your list (adding a city of N nights inserts N new days at its position).
 - NEVER move or remove items with status "booked", and never remove/reorder/resize a city in a way that shifts a booked item to another date. The server skips such ops; do not try.

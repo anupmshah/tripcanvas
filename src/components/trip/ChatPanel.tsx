@@ -8,7 +8,7 @@ export default function ChatPanel({ dto, reload }: { dto: TripDTO; reload: () =>
   const [text, setText] = useState(""); const [busy, setBusy] = useState(false); const [error, setError] = useState("");
   const [patch, setPatch] = useState<Proposal | null>(null); const [prefs, setPrefs] = useState<Candidate[]>([]);
   const url = `/api/trips/${dto.trip.id}/chat`;
-  useEffect(() => { fetch(url).then((r) => { if (!r.ok) throw new Error("Could not load chat"); return r.json(); }).then((d) => { setMessages(d.messages); if (d.pending) { setPatch(d.pending); setPrefs(d.pending.preferenceCandidates); } }).catch((e) => setError(e.message)); }, [url]);
+  useEffect(() => { fetch(url).then((r) => { if (!r.ok) throw new Error("Could not load chat"); return r.json(); }).then((d) => { setMessages(d.messages); setPrefs(d.preferenceCandidates ?? []); if (d.pending) setPatch(d.pending); }).catch((e) => setError(e.message)); }, [url]);
   async function send(mode: "chat" | "regenerate") {
     const message = mode === "regenerate" ? "Regenerate proposed items, keeping all booked items and my city route." : text;
     setBusy(true); setError("");

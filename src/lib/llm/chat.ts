@@ -8,7 +8,7 @@ import { callJson } from "./openai";
 import { SYSTEM } from "./prompts";
 import { flightsForTrip } from "../price/legs";
 
-export async function chat(tripId: string, message: string, mode: string) {
+export async function chat(tripId: string, message: string, mode: string, instruction?: string) {
   const dto = await getTripDTO(tripId);
   if (!dto) return null;
   const [profile, history] = await Promise.all([
@@ -19,7 +19,7 @@ export async function chat(tripId: string, message: string, mode: string) {
   const offers = flights.legs.flatMap((l) => l.offers.slice(0, 3));
   const output = await callJson(ChatOutput, [
     { role: "system", content: SYSTEM },
-    { role: "system", content: JSON.stringify({ profile, trip: dto, mode, flightOffers: offers, budget: dto.totals }) },
+    { role: "system", content: JSON.stringify({ profile, trip: dto, mode, flightOffers: offers, budget: dto.totals, instruction }) },
     ...history.reverse().map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
     { role: "user", content: message },
   ]);

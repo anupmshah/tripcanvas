@@ -434,3 +434,16 @@ Behaviour:
 - Budget view also groups totals per city.
 - Seeded demo trip: Bahrain → Lisbon (3 nights) → Porto (2 nights), 2 adults, BHD 1,500, train Lisbon→Porto, one booked hotel in Lisbon.
 - Smoke tests must cover: creating a 3-city trip, chat adding a city, booked item surviving a stop reorder.
+
+## 11. AMENDMENT — Free-text start is the PRIMARY entry point (user decision)
+The home page leads with one large text box: "Describe your trip". Example the user gave, which must work end to end:
+"Plan a USA trip for 2 adults and 1 kid for 15 days anytime between 15th December till 5th January. This is a first time to the USA and we are vegetarians."
+
+Flow (server route POST /api/trips/from-text, OpenAI + Zod, retried on invalid output):
+1. Extract a TripDraft: origin (default Profile.homeAirport), destination country/region, travellers (adults, children + ages if given), length in days, date WINDOW (earliest/latest) vs fixed dates, budget (optional, in display currency), interests, food (e.g. vegetarian), pace, first-visit flag, anything else as notes.
+2. Ask only for what is truly missing and blocks planning (show 1–3 short questions inline); everything else gets a sensible default the user can see and edit. If a window is given, the LLM picks concrete start/end dates inside it (say why: e.g. avoid Christmas price peaks / fit 15 days) — editable.
+3. Propose a multi-city route (cities in order + nights each + transport between, sized to trip length and party; e.g. first-time family USA 15 days → 3–4 cities with logical geography and season). Show it as an editable card; user can edit fields or type a change ("swap DC for Chicago", "fewer cities") which re-proposes before anything is created.
+4. On accept: create Trip + Stops + Days, then generate the first itinerary via the existing chat-patch pipeline (spec §11 order: flights per leg first via PriceProvider, then stays, then activities/food within remaining budget; estimates labelled), geocode-verify every stop, and open the trip editor.
+5. Stable preferences found in the text (vegetarian, kid age, first-time visitor) go through the existing preference-confirm prompt to save to Profile; vegetarian must also steer food items.
+The old manual "create trip" form stays as a secondary "enter details manually" option.
+Smoke test: POST the exact example text → trip with ≥3 US cities, dates inside 15 Dec–5 Jan totalling 15 days, 3 travellers, vegetarian food items, every full day has ≥1 named activity, every priced item labelled.

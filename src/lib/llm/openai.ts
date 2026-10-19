@@ -29,7 +29,7 @@ export async function callJson<T>(schema: ZodType<T>, messages: ChatMsg[], opts:
     } catch {
       lastProblem = "the output was not valid JSON";
     }
-    msgs.push({ role: "assistant", content: text.slice(0, 6000) }, { role: "user", content: `Your JSON was invalid. Fix these issues and return the complete corrected JSON only: ${lastProblem}` });
+    msgs.push({ role: "assistant", content: text }, { role: "user", content: `Your JSON was invalid. Fix these issues and return the COMPLETE corrected JSON only. Preserve all planned days and operations and all original task requirements: ${lastProblem}` });
   }
   throw new LlmInvalidOutput(`Model output stayed invalid after retries: ${lastProblem}`);
 }

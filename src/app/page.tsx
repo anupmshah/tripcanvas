@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import DemoButton from "@/components/DemoButton";
 import NewTripForm from "@/components/NewTripForm";
+import FreeTextStart from "@/components/FreeTextStart";
 
 export const dynamic = "force-dynamic";
 export default async function Home() {
@@ -11,6 +12,8 @@ export default async function Home() {
   ]);
   return (
     <main className="mx-auto max-w-4xl space-y-6 p-6">
+      <FreeTextStart />
+      <details><summary className="cursor-pointer text-sm text-sky-700">Enter details manually</summary><NewTripForm homeAirport={profile.homeAirport} /></details>
       <div className="flex items-center gap-3">
         <h1 className="text-2xl font-bold">Your trips</h1>
         {process.env.NODE_ENV !== "production" && <DemoButton />}
@@ -24,7 +27,6 @@ export default async function Home() {
           </li>
         ))}
       </ul>
-      <NewTripForm homeAirport={profile.homeAirport} />
     </main>
   );
 }

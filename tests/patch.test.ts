@@ -13,6 +13,8 @@ describe("patch validation and booked protection", () => {
     expect(NewItem.safeParse(item).success).toBe(true);
     expect(NewItem.safeParse({ ...item, estimate: { low: 30, mid: 20, high: 10, currency: "EUR" } }).success).toBe(false);
     expect(NewItem.safeParse({ type: "food", title: "Dinner" }).success).toBe(false);
+    const badTime = NewItem.safeParse({ ...item, start: "2026-12-20T09:00:00" });
+    expect(!badTime.success && badTime.error.issues[0].message).toContain("HH:MM");
     expect(PatchOp.safeParse({ op: "destroy" }).success).toBe(false);
     expect(ChatOutput.safeParse({ reply: "ok", patch: { ops: [] }, preferenceCandidates: [] }).success).toBe(true);
   });
