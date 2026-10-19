@@ -128,7 +128,8 @@ export function annotateOps(start: PState, ops: (PatchOpT & { geo?: Geo; offer?:
       case "add": {
         const day = S.days[raw.dayIndex];
         if (!day) return skip(`day ${raw.dayIndex} does not exist (trip has ${S.days.length} days, index from 0)`);
-        const offer = raw.item.offerId ? known.get(raw.item.offerId) : undefined;
+        const candidate = raw.item.type === "flight" && raw.item.offerId ? known.get(raw.item.offerId) : undefined;
+        const offer = candidate && (!candidate.leg || (candidate.leg.dayIndex === raw.dayIndex && candidate.leg.depart === addDays(S.startDate, raw.dayIndex))) ? candidate : undefined;
         const item: NewItemT = {
           ...raw.item,
           offerId: offer ? raw.item.offerId : null, // never keep an offer the server did not supply

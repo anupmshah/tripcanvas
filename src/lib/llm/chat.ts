@@ -6,6 +6,7 @@ import { annotateOps, stateFromDTO } from "../patch/plan";
 import { ChatOutput } from "../patch/schema";
 import { callJson } from "./openai";
 import { SYSTEM } from "./prompts";
+import { flightsForTrip } from "../price/legs";
 
 export async function chat(tripId: string, message: string, mode: string) {
   const dto = await getTripDTO(tripId);
@@ -14,16 +15,18 @@ export async function chat(tripId: string, message: string, mode: string) {
     prisma.profile.upsert({ where: { id: "default" }, create: {}, update: {} }),
     prisma.chatMessage.findMany({ where: { tripId }, orderBy: { createdAt: "desc" }, take: 10 }),
   ]);
+  const flights = await flightsForTrip(dto);
+  const offers = flights.legs.flatMap((l) => l.offers.slice(0, 3));
   const output = await callJson(ChatOutput, [
     { role: "system", content: SYSTEM },
-    { role: "system", content: JSON.stringify({ profile, trip: dto, mode, flightOffers: [], budget: null }) },
+    { role: "system", content: JSON.stringify({ profile, trip: dto, mode, flightOffers: offers, budget: dto.totals }) },
     ...history.reverse().map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
     { role: "user", content: message },
   ]);
   // Verify new cities first, then resolve item context against the simulated new schedule.
   const raw = await Promise.all(output.patch.ops.map(async (op) => op.op === "addStop"
     ? { ...op, geo: await geocode(`${op.city}, ${op.country}`) } : op));
-  const first = annotateOps(stateFromDTO(dto), raw);
+  const first = annotateOps(stateFromDTO(dto), raw, offers);
   const ops = await Promise.all(first.ops.map(async (op, i) => {
     if (op.op !== "add" || op.status !== "ok") return op;
     const ctx = first.ctx[i];

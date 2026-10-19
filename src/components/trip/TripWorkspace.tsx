@@ -7,6 +7,9 @@ import MapPanel from "./MapPanel";
 import PlaceCard from "./PlaceCard";
 import StopStrip from "./StopStrip";
 import ChatPanel from "./ChatPanel";
+import BudgetPanel from "./BudgetPanel";
+import PriceLabel from "./PriceLabel";
+import FlightOffers from "./FlightOffers";
 import type { Weather } from "./shared";
 
 export default function TripWorkspace({ initial }: { initial: TripDTO }) {
@@ -47,12 +50,14 @@ export default function TripWorkspace({ initial }: { initial: TripDTO }) {
           <span className="text-sm text-slate-600">{t.destination} · {t.startDate} → {t.endDate} · {t.adults} adult{t.adults === 1 ? "" : "s"}{t.children ? ` + ${t.children} child` : ""}{t.budgetAmount ? ` · Budget ${t.budgetAmount.toLocaleString("en-GB")} ${t.budgetCurrency}` : ""}</span>
         </div>
         <StopStrip stops={dto.stops} />
+        <FlightOffers dto={dto} reload={reload} />
         {msg && <div className="rounded bg-red-50 p-2 text-sm text-red-700" role="alert">{msg}</div>}
         <DayColumns dto={dto} setDto={setDto} reload={reload} weather={weather} toast={toast} selected={selected}
-          onDetails={setDetails} onEdit={setEditing} onDelete={del} />
+          onDetails={setDetails} onEdit={setEditing} onDelete={del} renderExtra={(i) => <PriceLabel item={i} displayCurrency={dto.totals.displayCurrency} />} />
       </section>
       <aside className="w-[28rem] shrink-0 space-y-3 overflow-y-auto border-l bg-white p-3">
         <MapPanel dto={dto} onSelect={setSelected} />
+        <BudgetPanel dto={dto} reload={reload} />
       </aside>
       {details && <PlaceCard item={details} city={dto.stops.find((s) => s.id === dto.days.find((d) => d.items.some((i) => i.id === details.id))?.stopId)?.city ?? ""} onClose={() => setDetails(null)} />}
       {editing && <ItemEditor item={editing} onClose={() => setEditing(null)} onSaved={reload} />}
