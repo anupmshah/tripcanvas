@@ -1,0 +1,46 @@
+import "server-only";
+import { prisma } from "../db";
+import { getTripDTO } from "../dto";
+import { geocode } from "../geo/nominatim";
+import { annotateOps, stateFromDTO } from "../patch/plan";
+import { ChatOutput } from "../patch/schema";
+import { callJson } from "./openai";
+import { SYSTEM } from "./prompts";
+
+export async function chat(tripId: string, message: string, mode: string) {
+  const dto = await getTripDTO(tripId);
+  if (!dto) return null;
+  const [profile, history] = await Promise.all([
+    prisma.profile.upsert({ where: { id: "default" }, create: {}, update: {} }),
+    prisma.chatMessage.findMany({ where: { tripId }, orderBy: { createdAt: "desc" }, take: 10 }),
+  ]);
+  const output = await callJson(ChatOutput, [
+    { role: "system", content: SYSTEM },
+    { role: "system", content: JSON.stringify({ profile, trip: dto, mode, flightOffers: [], budget: null }) },
+    ...history.reverse().map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
+    { role: "user", content: message },
+  ]);
+  // Verify new cities first, then resolve item context against the simulated new schedule.
+  const raw = await Promise.all(output.patch.ops.map(async (op) => op.op === "addStop"
+    ? { ...op, geo: await geocode(`${op.city}, ${op.country}`) } : op));
+  const first = annotateOps(stateFromDTO(dto), raw);
+  const ops = await Promise.all(first.ops.map(async (op, i) => {
+    if (op.op !== "add" || op.status !== "ok") return op;
+    const ctx = first.ctx[i];
+    const day = first.state.days[op.dayIndex];
+    const stop = first.state.stops.find((s) => s.id === day?.stopId);
+    const geo = await geocode(op.item.placeQuery ?? `${op.item.title}, ${stop?.city}, ${stop?.country}`, {
+      near: ctx?.lat != null && ctx.lng != null ? { lat: ctx.lat, lng: ctx.lng } : null, countryCode: ctx?.countryCode,
+    });
+    return { ...op, geo };
+  }));
+  const patch = await prisma.$transaction(async (tx) => {
+    const p = await tx.pendingPatch.create({ data: { tripId, opsJson: JSON.stringify(ops), prefsJson: JSON.stringify(output.preferenceCandidates) } });
+    await tx.chatMessage.createMany({ data: [
+      { tripId, role: "user", content: message, patchId: p.id },
+      { tripId, role: "assistant", content: output.reply, patchId: p.id },
+    ] });
+    return p;
+  });
+  return { reply: output.reply, patch: { id: patch.id, ops }, preferenceCandidates: output.preferenceCandidates };
+}

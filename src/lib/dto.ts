@@ -1,5 +1,5 @@
 import type { Item, Stop, Trip } from "@prisma/client";
-import { prisma } from "./db";
+import { prisma, type Db } from "./db";
 
 export type ItemDTO = Omit<Item, "createdAt" | "updatedAt" | "priceFetchedAt"> & { priceFetchedAt: string | null; links: { label: string; url: string }[] };
 export type DayDTO = { id: string; index: number; date: string; stopId: string; items: ItemDTO[] };
@@ -14,8 +14,8 @@ export function toItemDTO(it: Item, links: ItemDTO["links"] = []): ItemDTO {
   return { ...rest, priceFetchedAt: priceFetchedAt?.toISOString() ?? null, links };
 }
 
-export async function getTripDTO(id: string): Promise<TripDTO | null> {
-  const t = await prisma.trip.findUnique({
+export async function getTripDTO(id: string, db: Db = prisma): Promise<TripDTO | null> {
+  const t = await db.trip.findUnique({
     where: { id },
     include: { stops: { orderBy: { order: "asc" } }, days: { orderBy: { index: "asc" }, include: { items: { orderBy: { order: "asc" } } } } },
   });

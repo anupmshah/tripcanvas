@@ -6,6 +6,7 @@ import ItemEditor from "./ItemEditor";
 import MapPanel from "./MapPanel";
 import PlaceCard from "./PlaceCard";
 import StopStrip from "./StopStrip";
+import ChatPanel from "./ChatPanel";
 import type { Weather } from "./shared";
 
 export default function TripWorkspace({ initial }: { initial: TripDTO }) {
@@ -39,6 +40,7 @@ export default function TripWorkspace({ initial }: { initial: TripDTO }) {
   const t = dto.trip;
   return (
     <div className="flex h-[calc(100vh-41px)]">
+      <ChatPanel dto={dto} reload={reload} />
       <section className="min-w-0 flex-1 space-y-2 overflow-y-auto p-3">
         <div className="flex flex-wrap items-baseline gap-x-3">
           <h1 className="text-xl font-bold">{t.title}</h1>
