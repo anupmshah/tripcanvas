@@ -1,0 +1,171 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Profile {
+  id              String   @id @default("default")
+  budgetStyle     String   @default("moderate")
+  pace            String   @default("balanced")
+  interests       String   @default("")
+  food            String   @default("")
+  party           String   @default("2 adults")
+  homeAirport     String   @default("BAH")
+  dislikes        String   @default("")
+  displayCurrency String   @default("BHD")
+  updatedAt       DateTime @updatedAt
+}
+
+model Trip {
+  id             String        @id @default(cuid())
+  title          String
+  destination    String
+  originAirport  String
+  startDate      String
+  endDate        String
+  adults         Int           @default(2)
+  children       Int           @default(0)
+  budgetAmount   Float?
+  budgetCurrency String        @default("BHD")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  stops          Stop[]
+  days           Day[]
+  items          Item[]
+  messages       ChatMessage[]
+  patches        PendingPatch[]
+  shares         ShareLink[]
+}
+
+model Stop {
+  id            String @id @default(cuid())
+  tripId        String
+  order         Int
+  city          String
+  country       String
+  countryCode   String?
+  lat           Float?
+  lng           Float?
+  airport       String?
+  localCurrency String
+  startDate     String
+  endDate       String
+  trip          Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  days          Day[]
+
+  @@unique([tripId, order])
+}
+
+model Day {
+  id     String @id @default(cuid())
+  tripId String
+  stopId String
+  index  Int
+  date   String
+  trip   Trip   @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  stop   Stop   @relation(fields: [stopId], references: [id], onDelete: Cascade)
+  items  Item[]
+
+  @@unique([tripId, index])
+}
+
+model Item {
+  id             String    @id @default(cuid())
+  tripId         String
+  dayId          String
+  order          Int
+  type           String
+  title          String
+  placeQuery     String?
+  lat            Float?
+  lng            Float?
+  geoStatus      String    @default("pending")
+  start          String?
+  end            String?
+  notes          String?
+  status         String    @default("proposed")
+  price          Float?
+  priceLow       Float?
+  priceHigh      Float?
+  currency       String?
+  priceSource    String?
+  priceFetchedAt DateTime?
+  provider       String?
+  offerId        String?
+  bookingRef     String?
+  sourceUrl      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  trip           Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  day            Day       @relation(fields: [dayId], references: [id], onDelete: Cascade)
+
+  @@index([tripId])
+  @@index([dayId, order])
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  tripId    String
+  role      String
+  content   String
+  patchId   String?
+  createdAt DateTime @default(now())
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+}
+
+model PendingPatch {
+  id        String    @id @default(cuid())
+  tripId    String
+  opsJson   String
+  prefsJson String    @default("[]")
+  status    String    @default("pending")
+  createdAt DateTime  @default(now())
+  decidedAt DateTime?
+  trip      Trip      @relation(fields: [tripId], references: [id], onDelete: Cascade)
+}
+
+model ShareLink {
+  token     String   @id
+  tripId    String
+  createdAt DateTime @default(now())
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+}
+
+model GeocodeCache {
+  key         String   @id
+  found       Boolean
+  lat         Float?
+  lng         Float?
+  displayName String?
+  countryCode String?
+  fetchedAt   DateTime @default(now())
+}
+
+model PlaceInfoCache {
+  key          String   @id
+  source       String
+  found        Boolean
+  title        String?
+  extract      String?
+  url          String?
+  thumbnailUrl String?
+  fetchedAt    DateTime
+}
+
+model FxRate {
+  base      String   @id
+  ratesJson String
+  rateDate  String
+  fetchedAt DateTime
+}
+
+model OfferCache {
+  key        String   @id
+  provider   String
+  offersJson String
+  fetchedAt  DateTime
+}
