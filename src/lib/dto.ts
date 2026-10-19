@@ -4,6 +4,7 @@ import { getRates } from "./money/fx";
 import { computeTotals } from "./money/totals";
 import { priceLabel } from "./money/priceLabel";
 import { convert } from "./money/currency";
+import { linksForItem } from "./links/deeplinks";
 
 export type ItemDTO = Omit<Item, "createdAt" | "updatedAt" | "priceFetchedAt"> & { priceFetchedAt: string | null; links: { label: string; url: string }[]; label: ReturnType<typeof priceLabel>; displayPrice?: number | null };
 export type DayDTO = { id: string; index: number; date: string; stopId: string; items: ItemDTO[] };
@@ -31,7 +32,7 @@ export async function getTripDTO(id: string, db: Db = prisma): Promise<TripDTO |
   const displayCurrency = profile?.displayCurrency ?? "BHD";
   const data = {
     trip, stops,
-    days: days.map((d) => ({ id: d.id, index: d.index, date: d.date, stopId: d.stopId, items: d.items.map((it) => ({ ...toItemDTO(it), displayPrice: it.price != null && it.currency ? convert(it.price, it.currency, displayCurrency, rates) : null })) })),
+    days: days.map((d) => ({ id: d.id, index: d.index, date: d.date, stopId: d.stopId, items: d.items.map((it) => ({ ...toItemDTO(it, linksForItem(it, d, trip, stops, days.length - 1)), displayPrice: it.price != null && it.currency ? convert(it.price, it.currency, displayCurrency, rates) : null })) })),
   };
   return { ...data, totals: computeTotals(data, rates, displayCurrency), rates: rates ? { rateDate: rates.rateDate, conversions: Object.fromEntries([...new Set(stops.map((s) => s.localCurrency))].map((c) => [c, convert(1, c, displayCurrency, rates)])) } : null };
 }

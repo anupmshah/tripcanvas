@@ -10,6 +10,8 @@ import ChatPanel from "./ChatPanel";
 import BudgetPanel from "./BudgetPanel";
 import PriceLabel from "./PriceLabel";
 import FlightOffers from "./FlightOffers";
+import BookingLinks from "./BookingLinks";
+import MarkBookedDialog from "./MarkBookedDialog";
 import type { Weather } from "./shared";
 
 export default function TripWorkspace({ initial, initialWarning = "" }: { initial: TripDTO; initialWarning?: string }) {
@@ -19,6 +21,7 @@ export default function TripWorkspace({ initial, initialWarning = "" }: { initia
   const [selected, setSelected] = useState<string | null>(null);
   const [details, setDetails] = useState<ItemDTO | null>(null);
   const [editing, setEditing] = useState<ItemDTO | null>(null);
+  const [booking, setBooking] = useState<ItemDTO | null>(null);
   const id = dto.trip.id;
 
   const toast = useCallback((m: string) => { setMsg(m); setTimeout(() => setMsg(""), 4000); }, []);
@@ -41,6 +44,7 @@ export default function TripWorkspace({ initial, initialWarning = "" }: { initia
   }
 
   const t = dto.trip;
+  const currencyFor = (i: ItemDTO) => dto.stops.find((s) => s.id === dto.days.find((d) => d.id === i.dayId)?.stopId)?.localCurrency ?? dto.totals.displayCurrency;
   return (
     <div className="flex h-[calc(100vh-41px)]">
       <ChatPanel dto={dto} reload={reload} />
@@ -53,14 +57,15 @@ export default function TripWorkspace({ initial, initialWarning = "" }: { initia
         <FlightOffers dto={dto} reload={reload} />
         {msg && <div className="rounded bg-red-50 p-2 text-sm text-red-700" role="alert">{msg}</div>}
         <DayColumns dto={dto} setDto={setDto} reload={reload} weather={weather} toast={toast} selected={selected}
-          onDetails={setDetails} onEdit={setEditing} onDelete={del} renderExtra={(i) => <PriceLabel item={i} displayCurrency={dto.totals.displayCurrency} />} />
+          onDetails={setDetails} onEdit={setEditing} onDelete={del} renderExtra={(i) => <><PriceLabel item={i} displayCurrency={dto.totals.displayCurrency} /><BookingLinks item={i} />{i.status !== "booked" && <button onClick={() => setBooking(i)} className="text-xs text-emerald-700 underline">Mark as booked</button>}</>} />
       </section>
       <aside className="w-[28rem] shrink-0 space-y-3 overflow-y-auto border-l bg-white p-3">
         <MapPanel dto={dto} onSelect={setSelected} />
         <BudgetPanel dto={dto} reload={reload} />
       </aside>
       {details && <PlaceCard item={details} city={dto.stops.find((s) => s.id === dto.days.find((d) => d.items.some((i) => i.id === details.id))?.stopId)?.city ?? ""} onClose={() => setDetails(null)} />}
-      {editing && <ItemEditor item={editing} onClose={() => setEditing(null)} onSaved={reload} />}
+      {editing && <ItemEditor item={editing} defaultCurrency={currencyFor(editing)} onClose={() => setEditing(null)} onSaved={reload} />}
+      {booking && <MarkBookedDialog item={booking} defaultCurrency={currencyFor(booking)} onClose={() => setBooking(null)} onSaved={reload} />}
     </div>
   );
 }

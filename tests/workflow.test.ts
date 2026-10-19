@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
 import { TripDraft, blockingQuestions, resolveDraftDates } from "../src/lib/llm/draft";
+import { linksForItem, airlineSite } from "../src/lib/links/deeplinks";
 const draft = {
   destination: "USA", originAirport: "BAH", adults: 2, children: 1, childAges: [], lengthDays: 15,
   earliest: "2026-12-15", latest: "2027-01-05", startDate: "2026-12-16", endDate: "2026-12-30", dateReason: "Fits the window; prices have not been checked.",
@@ -19,4 +20,18 @@ it("asks only for the missing destination, duration and date window", () => {
 it("derives inclusive end dates and fits the selected start inside a window", () => {
   expect(resolveDraftDates({ ...draft, startDate: "2026-12-20", endDate: "2027-01-04" } as any)).toMatchObject({ startDate: "2026-12-20", endDate: "2027-01-03" });
   expect(resolveDraftDates({ ...draft, startDate: "2027-01-01" } as any)).toMatchObject({ startDate: "2026-12-22", endDate: "2027-01-05" });
+});
+it("builds booking links from the item's own stop, dates and party", () => {
+  const trip = { originAirport: "BAH", adults: 2, children: 1 };
+  const stops = [{ id: "lis", order: 0, city: "Lisbon", airport: "LIS", endDate: "2026-12-20" }, { id: "opo", order: 1, city: "Porto", airport: "OPO", endDate: "2026-12-23" }];
+  const day = { index: 3, date: "2026-12-20", stopId: "opo" };
+  const links = linksForItem({ type: "stay", title: "Hotel A & B" }, day, trip, stops, 6);
+  const booking = new URL(links[0].url);
+  expect(booking.searchParams.get("ss")).toBe("Hotel A & B, Porto");
+  expect(booking.searchParams.get("checkin")).toBe("2026-12-20");
+  expect(booking.searchParams.get("checkout")).toBe("2026-12-23");
+  expect(booking.searchParams.get("group_children")).toBe("1");
+  const ret = linksForItem({ type: "flight", title: "Return" }, { ...day, index: 6, date: "2026-12-23" }, trip, stops, 6);
+  expect(decodeURIComponent(ret[0].url)).toContain("OPO to BAH on 2026-12-23");
+  expect(new URL(airlineSite("TP", "TAP")).hostname).toBe("www.flytap.com");
 });

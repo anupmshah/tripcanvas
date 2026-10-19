@@ -4,14 +4,14 @@ import type { ItemDTO } from "@/lib/dto";
 
 const f = "w-full rounded border border-slate-300 px-2 py-1 text-sm";
 
-export default function ItemEditor({ item, onClose, onSaved }: { item: ItemDTO; onClose: () => void; onSaved: () => void }) {
+export default function ItemEditor({ item, defaultCurrency, onClose, onSaved }: { item: ItemDTO; defaultCurrency: string; onClose: () => void; onSaved: () => void }) {
   const booked = item.status === "booked";
   const [title, setTitle] = useState(item.title);
   const [start, setStart] = useState(item.start ?? "");
   const [end, setEnd] = useState(item.end ?? "");
   const [notes, setNotes] = useState(item.notes ?? "");
   const [amount, setAmount] = useState(item.priceSource === "entered" ? String(item.price ?? "") : "");
-  const [ccy, setCcy] = useState(item.currency ?? "EUR");
+  const [ccy, setCcy] = useState(item.currency ?? defaultCurrency);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
