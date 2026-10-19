@@ -6,3 +6,8 @@ node_modules/
 *.db-journal
 prisma/dev.db*
 dev.log
+neon.private.txt
+.claude/settings.local.json
+.tmp
+tsconfig.tsbuildinfo
+neon.private.txt

@@ -9,6 +9,11 @@ export type TripDTO = {
   days: DayDTO[];
 };
 
+export function toItemDTO(it: Item, links: ItemDTO["links"] = []): ItemDTO {
+  const { createdAt: _a, updatedAt: _b, priceFetchedAt, ...rest } = it;
+  return { ...rest, priceFetchedAt: priceFetchedAt?.toISOString() ?? null, links };
+}
+
 export async function getTripDTO(id: string): Promise<TripDTO | null> {
   const t = await prisma.trip.findUnique({
     where: { id },
@@ -18,9 +23,6 @@ export async function getTripDTO(id: string): Promise<TripDTO | null> {
   const { stops, days, createdAt: _c, updatedAt: _u, ...trip } = t;
   return {
     trip, stops,
-    days: days.map((d) => ({
-      id: d.id, index: d.index, date: d.date, stopId: d.stopId,
-      items: d.items.map(({ createdAt: _a, updatedAt: _b, priceFetchedAt, ...it }) => ({ ...it, priceFetchedAt: priceFetchedAt?.toISOString() ?? null, links: [] })),
-    })),
+    days: days.map((d) => ({ id: d.id, index: d.index, date: d.date, stopId: d.stopId, items: d.items.map((it) => toItemDTO(it)) })),
   };
 }

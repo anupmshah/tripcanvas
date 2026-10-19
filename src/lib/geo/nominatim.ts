@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "../db";
 import { env } from "../env";
+import { haversineKm } from "./travel";
 
 export type GeoResult = { found: boolean; lat?: number; lng?: number; displayName?: string; countryCode?: string; cached: boolean; unavailable?: boolean };
 export type GeoCtx = { near?: { lat: number; lng: number } | null; countryCode?: string | null };
@@ -24,18 +25,23 @@ export async function geocode(query: string, ctx: GeoCtx = {}): Promise<GeoResul
   const cc = ctx.countryCode ? `&countrycodes=${ctx.countryCode.toLowerCase()}` : "";
   const key = `${q.toLowerCase().replace(/\s+/g, " ")}|${ctx.near ? `${ctx.near.lat.toFixed(1)},${ctx.near.lng.toFixed(1)}` : ""}|${ctx.countryCode ?? ""}`;
   const hit = await prisma.geocodeCache.findUnique({ where: { key } });
-  if (hit && Date.now() - hit.fetchedAt.getTime() < 30 * 864e5) {
+  if (hit && Date.now() - hit.fetchedAt.getTime() < (hit.found ? 30 : 1) * 864e5) {
     return hit.found
       ? { found: true, lat: hit.lat!, lng: hit.lng!, displayName: hit.displayName ?? undefined, countryCode: hit.countryCode ?? undefined, cached: true }
       : { found: false, cached: true };
   }
-  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=1&q=${encodeURIComponent(q)}${box}${cc}`;
+  const base = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=1&q=${encodeURIComponent(q)}${cc}`;
+  const search = (url: string) => throttled(async () => {
+    const r = await fetch(url, { headers: { "User-Agent": `TripCanvas/0.1 (${env.NOMINATIM_CONTACT})`, "Accept-Language": "en" }, signal: AbortSignal.timeout(15000) });
+    if (!r.ok) throw new Error(`Nominatim ${r.status}`);
+    return (await r.json()) as any[];
+  });
   try {
-    const rows = await throttled(async () => {
-      const r = await fetch(url, { headers: { "User-Agent": `TripCanvas/0.1 (${env.NOMINATIM_CONTACT})`, "Accept-Language": "en" }, signal: AbortSignal.timeout(15000) });
-      if (!r.ok) throw new Error(`Nominatim ${r.status}`);
-      return (await r.json()) as any[];
-    });
+    let rows = await search(base + box);
+    // Travel days: the place may be in the neighbouring city. Retry country-wide, accept only if within 400 km of the stop.
+    if (!rows.length && ctx.near) {
+      rows = (await search(base)).filter((x) => haversineKm(ctx.near!, { lat: Number(x.lat), lng: Number(x.lon) }) <= 400);
+    }
     const top = rows[0];
     const data = top
       ? { found: true, lat: Number(top.lat), lng: Number(top.lon), displayName: String(top.display_name), countryCode: top.address?.country_code as string | undefined }

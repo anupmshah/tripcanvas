@@ -15,11 +15,11 @@ const ROWS: Row[] = [
   [2, "activity", "São Jorge Castle", "Castelo de São Jorge, Lisbon", 38.7139, -9.1335, [30, 30, 36], "10:00"],
   [2, "activity", "Miradouro de Santa Luzia", "Miradouro de Santa Luzia, Lisbon", 38.7118, -9.1302, [0, 0, 0], "12:30"],
   [2, "activity", "Fado Museum", "Museu do Fado, Lisbon", 38.7106, -9.1281, [10, 12, 16], "15:00"],
-  [3, "transport", "Train Lisbon → Porto", "Estação de Lisboa Santa Apolónia", 38.7142, -9.1226, [60, 80, 110], "09:00"],
+  [3, "transport", "Train Lisbon → Porto", "Estação de Santa Apolónia, Lisbon", 38.7146, -9.1220, [60, 80, 110], "09:00"],
   [3, "stay", "Hotel Infante Sagres", "Hotel Infante Sagres, Porto", 41.147, -8.612, [220, 280, 360], null],
   [3, "activity", "Livraria Lello", "Livraria Lello, Porto", 41.1468, -8.615, [10, 14, 20], "16:00"],
   [4, "activity", "Dom Luís I Bridge walk", "Ponte Dom Luís I, Porto", 41.1399, -8.6094, [0, 0, 0], "10:00"],
-  [4, "activity", "Taylor's Port Cellars", "Taylor's Port Cellars, Vila Nova de Gaia", 41.1386, -8.6179, [30, 36, 46], "14:00"],
+  [4, "activity", "Taylor's Port Cellars", "Taylor's Port, Vila Nova de Gaia", 41.1343, -8.6144, [30, 36, 46], "14:00"],
   [4, "food", "Francesinha at Café Santiago", "Café Santiago, Porto", 41.1475, -8.6086, [25, 32, 44], "19:30"],
   [5, "flight", "Porto → Bahrain", "Francisco Sá Carneiro Airport, Porto", 41.2481, -8.6814, null, null],
 ];
