@@ -46,7 +46,7 @@ With dev stopped, run `npm run build`, then `node scripts/check-client-secrets.m
 
 ## Sources
 
-Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), geocoding via Nominatim (cached, at most one request/second). Place summaries from Wikipedia/Wikivoyage (CC BY-SA, with article links and fetch dates). Weather from Open-Meteo. [Rates by Exchange Rate API](https://www.exchangerate-api.com). Links open the original booking sites; the app does not scrape them.
+Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright), geocoding via Nominatim (cached, at most one request/second). Place summaries from Wikipedia/Wikivoyage (CC BY-SA, with article links and fetch dates). City cards try Wikivoyage, then Wikipedia, then a cached, clearly labelled AI summary. City lookups strip country qualifiers and handle common aliases (New York → New York City); Wikipedia title search is the final public-source fallback. Weather from Open-Meteo. [Rates by Exchange Rate API](https://www.exchangerate-api.com). Links open the original booking sites; the app does not scrape them.
 
 ## Known limits
 

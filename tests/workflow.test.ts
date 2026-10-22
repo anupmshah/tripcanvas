@@ -3,6 +3,12 @@ import { TripDraft, FromTextInput, blockingQuestions, resolveDraftDates } from "
 import { linksForItem, airlineSite } from "../src/lib/links/deeplinks";
 import { makeIcs } from "../src/lib/export/ics";
 import { verificationQueries, wikiMatches, locationVerified, canReadGeoCache } from "../src/lib/geo/queries";
+import { cityTitles } from "../src/lib/info/wiki";
+it("normalises city aliases and removes country qualifiers for guide lookups", () => {
+  expect(cityTitles("New York, USA")).toEqual(["New York City", "New York"]);
+  expect(cityTitles("NYC, United States")[0]).toBe("New York City");
+  expect(cityTitles("Porto, Portugal")).toEqual(["Porto"]);
+});
 it("tries a complete place query before the bounded name and accepts only a relevant wiki match", () => {
   expect(verificationQueries("Magic Kingdom Park", { city: "Orlando", country: "USA" })).toEqual(["Magic Kingdom Park, Orlando, USA", "Magic Kingdom Park"]);
   expect(verificationQueries("Torre de Belém, Lisbon", { city: "Porto", country: "Portugal" })[0]).toBe("Torre de Belém, Lisbon");
