@@ -7,7 +7,9 @@ import { flightUrls } from "./deeplink";
 export class FixtureProvider implements PriceProvider {
   name = "fixture";
   async searchFlights(...args: Parameters<PriceProvider["searchFlights"]>) {
-    const fixture = JSON.parse(await readFile(join(process.cwd(), "tests/fixtures/duffel-offers.json"), "utf8"));
+    const fixture = JSON.parse(
+      await readFile(join(process.cwd(), "tests/fixtures/duffel-offers.json"), "utf8"),
+    );
     return normalizeOffers(fixture, "fixture", flightUrls(...args)[0].url);
   }
 }

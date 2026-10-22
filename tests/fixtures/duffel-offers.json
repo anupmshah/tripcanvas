@@ -1,1 +1,32 @@
-{"data":{"offers":[{"id":"off_fixture_expensive","total_amount":"560.00","total_currency":"EUR","owner":{"name":"TAP Air Portugal","iata_code":"TP"},"slices":[{"origin":{"iata_code":"BAH"},"destination":{"iata_code":"LIS"},"segments":[]}]},{"id":"off_fixture_cheap","total_amount":"245.50","total_currency":"EUR","owner":{"name":"Gulf Air","iata_code":"GF"},"slices":[{"origin":{"iata_code":"BAH"},"destination":{"iata_code":"LIS"},"segments":[]}]}]}}
+{
+  "data": {
+    "offers": [
+      {
+        "id": "off_fixture_expensive",
+        "total_amount": "560.00",
+        "total_currency": "EUR",
+        "owner": { "name": "TAP Air Portugal", "iata_code": "TP" },
+        "slices": [
+          {
+            "origin": { "iata_code": "BAH" },
+            "destination": { "iata_code": "LIS" },
+            "segments": []
+          }
+        ]
+      },
+      {
+        "id": "off_fixture_cheap",
+        "total_amount": "245.50",
+        "total_currency": "EUR",
+        "owner": { "name": "Gulf Air", "iata_code": "GF" },
+        "slices": [
+          {
+            "origin": { "iata_code": "BAH" },
+            "destination": { "iata_code": "LIS" },
+            "segments": []
+          }
+        ]
+      }
+    ]
+  }
+}

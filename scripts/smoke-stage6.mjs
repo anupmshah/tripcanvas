@@ -1,20 +1,64 @@
 import { assert, j, items, newDemoTrip, setStage, BASE_URL } from "./smoke-lib.mjs";
 setStage("stage 6: read-only share, ICS, print");
 const { id, dto } = await newDemoTrip();
-assert((await j(`/api/trips/${id}/items`, { method: "POST", body: { dayIndex: 0, type: "activity", title: "Bad time", start: "99:99" } })).status === 400, "manual POST rejects invalid local time");
-assert((await j(`/api/items/${items(dto).find((i) => i.status === "proposed").id}`, { method: "PATCH", body: { end: "24:00" } })).status === 400, "manual PATCH rejects invalid local time");
+assert(
+  (
+    await j(`/api/trips/${id}/items`, {
+      method: "POST",
+      body: { dayIndex: 0, type: "activity", title: "Bad time", start: "99:99" },
+    })
+  ).status === 400,
+  "manual POST rejects invalid local time",
+);
+assert(
+  (
+    await j(`/api/items/${items(dto).find((i) => i.status === "proposed").id}`, {
+      method: "PATCH",
+      body: { end: "24:00" },
+    })
+  ).status === 400,
+  "manual PATCH rejects invalid local time",
+);
 const r = await j(`/api/trips/${id}/share`, { method: "POST" });
 assert(r.status === 200 && r.data.token && r.data.url.startsWith("/share/"), "created share link");
-const share = await fetch(BASE_URL + r.data.url), html = await share.text();
-assert(share.status === 200 && html.includes(dto.trip.title), "shared itinerary contains trip title");
-assert(!html.includes("Mark as booked") && !html.includes("Chat message") && !html.includes("<textarea"), "shared page has no editing or chat widgets");
+const share = await fetch(BASE_URL + r.data.url),
+  html = await share.text();
+assert(
+  share.status === 200 && html.includes(dto.trip.title),
+  "shared itinerary contains trip title",
+);
+assert(
+  !html.includes("Mark as booked") && !html.includes("Chat message") && !html.includes("<textarea"),
+  "shared page has no editing or chat widgets",
+);
 assert(!html.includes("DEMO-4821"), "share does not disclose booking reference");
 assert((await fetch(BASE_URL + "/share/bogus")).status === 404, "unknown share is 404");
-const c = await fetch(`${BASE_URL}/api/trips/${id}/ics`), ics = await c.text();
-assert(c.status === 200 && c.headers.get("content-type").includes("text/calendar") && c.headers.get("content-disposition").includes("attachment"), "calendar attachment response");
-assert(ics.startsWith("BEGIN:VCALENDAR\r\n") && ics.endsWith("END:VCALENDAR\r\n") && !ics.replaceAll("\r\n", "").includes("\n"), "ICS has CRLF lines and valid envelope");
-assert((ics.match(/^BEGIN:VEVENT/gm) ?? []).length === items(dto).length, "one calendar event per item");
-const p = await fetch(`${BASE_URL}/trip/${id}/print`), print = await p.text();
-assert(p.status === 200 && print.includes(dto.trip.title) && !print.includes("Mark as booked"), "read-only print / Save as PDF page");
-assert((await fetch(`${BASE_URL}/api/trips/bogus/ics`)).status === 404, "unknown trip calendar is 404");
+const c = await fetch(`${BASE_URL}/api/trips/${id}/ics`),
+  ics = await c.text();
+assert(
+  c.status === 200 &&
+    c.headers.get("content-type").includes("text/calendar") &&
+    c.headers.get("content-disposition").includes("attachment"),
+  "calendar attachment response",
+);
+assert(
+  ics.startsWith("BEGIN:VCALENDAR\r\n") &&
+    ics.endsWith("END:VCALENDAR\r\n") &&
+    !ics.replaceAll("\r\n", "").includes("\n"),
+  "ICS has CRLF lines and valid envelope",
+);
+assert(
+  (ics.match(/^BEGIN:VEVENT/gm) ?? []).length === items(dto).length,
+  "one calendar event per item",
+);
+const p = await fetch(`${BASE_URL}/trip/${id}/print`),
+  print = await p.text();
+assert(
+  p.status === 200 && print.includes(dto.trip.title) && !print.includes("Mark as booked"),
+  "read-only print / Save as PDF page",
+);
+assert(
+  (await fetch(`${BASE_URL}/api/trips/bogus/ics`)).status === 404,
+  "unknown trip calendar is 404",
+);
 console.log("STAGE 6 SMOKE PASSED");

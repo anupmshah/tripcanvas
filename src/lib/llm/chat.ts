@@ -19,31 +19,65 @@ export async function chat(tripId: string, message: string, mode: string, instru
   const offers = flights.legs.flatMap((l) => l.offers.slice(0, 3));
   const output = await callJson(ChatOutput, [
     { role: "system", content: SYSTEM },
-    { role: "system", content: JSON.stringify({ profile, trip: dto, mode, flightOffers: offers, budget: dto.totals, flightEstimates: flights.legs.map((l) => ({ ...l, offers: undefined })), instruction }) },
+    {
+      role: "system",
+      content: JSON.stringify({
+        profile,
+        trip: dto,
+        mode,
+        flightOffers: offers,
+        budget: dto.totals,
+        flightEstimates: flights.legs.map((l) => ({ ...l, offers: undefined })),
+        instruction,
+      }),
+    },
     ...history.reverse().map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
     { role: "user", content: message },
   ]);
   // Verify new cities first, then resolve item context against the simulated new schedule.
-  const raw = await Promise.all(output.patch.ops.map(async (op) => op.op === "addStop"
-    ? { ...op, geo: await geocode(`${op.city}, ${op.country}`) } : op));
+  const raw = await Promise.all(
+    output.patch.ops.map(async (op) =>
+      op.op === "addStop" ? { ...op, geo: await geocode(`${op.city}, ${op.country}`) } : op,
+    ),
+  );
   const first = annotateOps(stateFromDTO(dto), raw, offers);
-  const ops = await Promise.all(first.ops.map(async (op, i) => {
-    if (op.op !== "add" || op.status !== "ok") return op;
-    const ctx = first.ctx[i];
-    const day = first.state.days[op.dayIndex];
-    const stop = first.state.stops.find((s) => s.id === day?.stopId);
-    const geo = await geocode(op.item.placeQuery ?? `${op.item.title}, ${stop?.city}, ${stop?.country}`, {
-      near: ctx?.lat != null && ctx.lng != null ? { lat: ctx.lat, lng: ctx.lng } : null, countryCode: ctx?.countryCode, city: stop?.city, country: stop?.country,
-    });
-    return { ...op, geo };
-  }));
+  const ops = await Promise.all(
+    first.ops.map(async (op, i) => {
+      if (op.op !== "add" || op.status !== "ok") return op;
+      const ctx = first.ctx[i];
+      const day = first.state.days[op.dayIndex];
+      const stop = first.state.stops.find((s) => s.id === day?.stopId);
+      const geo = await geocode(
+        op.item.placeQuery ?? `${op.item.title}, ${stop?.city}, ${stop?.country}`,
+        {
+          near: ctx?.lat != null && ctx.lng != null ? { lat: ctx.lat, lng: ctx.lng } : null,
+          countryCode: ctx?.countryCode,
+          city: stop?.city,
+          country: stop?.country,
+        },
+      );
+      return { ...op, geo };
+    }),
+  );
   const patch = await prisma.$transaction(async (tx) => {
-    const p = await tx.pendingPatch.create({ data: { tripId, opsJson: JSON.stringify(ops), prefsJson: JSON.stringify(output.preferenceCandidates) } });
-    await tx.chatMessage.createMany({ data: [
-      { tripId, role: "user", content: message, patchId: p.id },
-      { tripId, role: "assistant", content: output.reply, patchId: p.id },
-    ] });
+    const p = await tx.pendingPatch.create({
+      data: {
+        tripId,
+        opsJson: JSON.stringify(ops),
+        prefsJson: JSON.stringify(output.preferenceCandidates),
+      },
+    });
+    await tx.chatMessage.createMany({
+      data: [
+        { tripId, role: "user", content: message, patchId: p.id },
+        { tripId, role: "assistant", content: output.reply, patchId: p.id },
+      ],
+    });
     return p;
   });
-  return { reply: output.reply, patch: { id: patch.id, ops }, preferenceCandidates: output.preferenceCandidates };
+  return {
+    reply: output.reply,
+    patch: { id: patch.id, ops },
+    preferenceCandidates: output.preferenceCandidates,
+  };
 }

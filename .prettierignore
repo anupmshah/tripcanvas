@@ -1,0 +1,4 @@
+.agent-grid/
+.next/
+.tmp/
+node_modules/

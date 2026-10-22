@@ -6,7 +6,8 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     const result = await applyPatch((await params).id);
     return result ? json(result) : err(409, "Patch no longer pending");
   } catch (e) {
-    if ((e as { code?: string }).code === "P2034") return err(409, "Trip changed while applying. Please retry.");
+    if ((e as { code?: string }).code === "P2034")
+      return err(409, "Trip changed while applying. Please retry.");
     throw e;
   }
 }

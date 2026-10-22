@@ -7,10 +7,21 @@ import { body, err, json } from "@/lib/http";
 export const runtime = "nodejs";
 type Ctx = { params: Promise<{ id: string }> };
 const Time = TimeValue.nullable();
-const Patch = z.object({
-  title: z.string().min(1).max(120), notes: z.string().max(500).nullable(), start: Time, end: Time,
-  entered: z.object({ amount: z.number().nonnegative(), currency: z.string().regex(/^[A-Za-z]{3}$/).transform((s) => s.toUpperCase()) }),
-}).partial();
+const Patch = z
+  .object({
+    title: z.string().min(1).max(120),
+    notes: z.string().max(500).nullable(),
+    start: Time,
+    end: Time,
+    entered: z.object({
+      amount: z.number().nonnegative(),
+      currency: z
+        .string()
+        .regex(/^[A-Za-z]{3}$/)
+        .transform((s) => s.toUpperCase()),
+    }),
+  })
+  .partial();
 
 export async function PATCH(req: Request, { params }: Ctx) {
   const id = (await params).id;
@@ -18,12 +29,24 @@ export async function PATCH(req: Request, { params }: Ctx) {
   if (bad) return bad;
   const item = await prisma.item.findUnique({ where: { id } });
   if (!item) return err(404, "Item not found");
-  if (item.status === "booked" && Object.keys(d).some((k) => k !== "notes")) return err(409, "Booked items are locked (only notes can change)");
+  if (item.status === "booked" && Object.keys(d).some((k) => k !== "notes"))
+    return err(409, "Booked items are locked (only notes can change)");
   const { entered, ...rest } = d;
   const priceData = entered
-    ? { price: entered.amount, priceLow: null, priceHigh: null, currency: entered.currency, priceSource: "entered", provider: "user", priceFetchedAt: new Date() }
+    ? {
+        price: entered.amount,
+        priceLow: null,
+        priceHigh: null,
+        currency: entered.currency,
+        priceSource: "entered",
+        provider: "user",
+        priceFetchedAt: new Date(),
+      }
     : {};
-  const changed = await prisma.item.updateMany({ where: { id, ...(Object.keys(d).some((k) => k !== "notes") ? { status: "proposed" } : {}) }, data: { ...rest, ...priceData } });
+  const changed = await prisma.item.updateMany({
+    where: { id, ...(Object.keys(d).some((k) => k !== "notes") ? { status: "proposed" } : {}) },
+    data: { ...rest, ...priceData },
+  });
   if (!changed.count) return err(409, "Item changed or was booked. Reload and retry.");
   const updated = await prisma.item.findUnique({ where: { id } });
   return updated ? json(toItemDTO(updated)) : err(404, "Item not found");

@@ -1,8 +1,14 @@
 export const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 let stage = "?";
-export const setStage = (s) => { stage = s; console.log(`\n=== ${s} (${BASE_URL}) ===`); };
+export const setStage = (s) => {
+  stage = s;
+  console.log(`\n=== ${s} (${BASE_URL}) ===`);
+};
 export function assert(cond, msg) {
-  if (!cond) { console.error(`SMOKE FAIL [${stage}]: ${msg}`); process.exit(1); }
+  if (!cond) {
+    console.error(`SMOKE FAIL [${stage}]: ${msg}`);
+    process.exit(1);
+  }
   console.log(`  ok - ${msg}`);
 }
 /** fetch + parse JSON. Returns {status, data, res}. */
@@ -13,7 +19,12 @@ export async function j(path, opts = {}) {
     body: opts.body && typeof opts.body !== "string" ? JSON.stringify(opts.body) : opts.body,
   });
   const text = await res.text();
-  let data; try { data = JSON.parse(text); } catch { data = text; }
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    data = text;
+  }
   return { status: res.status, data, res };
 }
 export async function newDemoTrip() {

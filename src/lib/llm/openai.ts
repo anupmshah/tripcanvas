@@ -12,7 +12,11 @@ export function jsonCorrections(error: ZodError) {
   return error.issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`).join("; ");
 }
 /** Calls the model in JSON mode, validates with Zod, and retries with the validation errors fed back. */
-export async function callJson<T>(schema: ZodType<T>, messages: ChatMsg[], opts: { maxAttempts?: number } = {}): Promise<T> {
+export async function callJson<T>(
+  schema: ZodType<T>,
+  messages: ChatMsg[],
+  opts: { maxAttempts?: number } = {},
+): Promise<T> {
   if (!env.OPENAI_API_KEY) throw new LlmUnavailable("OPENAI_API_KEY is not set");
   client ??= new OpenAI({ apiKey: env.OPENAI_API_KEY, timeout: 90_000, maxRetries: 1 });
   const msgs = [...messages];
@@ -20,7 +24,11 @@ export async function callJson<T>(schema: ZodType<T>, messages: ChatMsg[], opts:
   for (let attempt = 1; attempt <= (opts.maxAttempts ?? 3); attempt++) {
     let text = "";
     try {
-      const r = await client.chat.completions.create({ model: env.OPENAI_MODEL, response_format: { type: "json_object" }, messages: msgs });
+      const r = await client.chat.completions.create({
+        model: env.OPENAI_MODEL,
+        response_format: { type: "json_object" },
+        messages: msgs,
+      });
       text = r.choices[0]?.message?.content ?? "";
     } catch (e) {
       throw new LlmUnavailable(`OpenAI request failed: ${(e as Error).message.slice(0, 200)}`);
@@ -32,7 +40,13 @@ export async function callJson<T>(schema: ZodType<T>, messages: ChatMsg[], opts:
     } catch {
       lastProblem = "the output was not valid JSON";
     }
-    msgs.push({ role: "assistant", content: text }, { role: "user", content: `Your JSON was invalid. Fix these issues and return the COMPLETE corrected JSON only. Preserve all planned days and operations and all original task requirements: ${lastProblem}` });
+    msgs.push(
+      { role: "assistant", content: text },
+      {
+        role: "user",
+        content: `Your JSON was invalid. Fix these issues and return the COMPLETE corrected JSON only. Preserve all planned days and operations and all original task requirements: ${lastProblem}`,
+      },
+    );
   }
   throw new LlmInvalidOutput(`Model output stayed invalid after retries: ${lastProblem}`);
 }

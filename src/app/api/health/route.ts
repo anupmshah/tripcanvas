@@ -6,5 +6,13 @@ export const runtime = "nodejs";
 export async function GET() {
   await prisma.$queryRaw`SELECT 1`;
   const t = env.DUFFEL_ACCESS_TOKEN;
-  return json({ ok: true, db: true, env: { openai: !!env.OPENAI_API_KEY, duffel: !!t, duffelMode: t ? (t.startsWith("duffel_test_") ? "test" : "live") : null } });
+  return json({
+    ok: true,
+    db: true,
+    env: {
+      openai: !!env.OPENAI_API_KEY,
+      duffel: !!t,
+      duffelMode: t ? (t.startsWith("duffel_test_") ? "test" : "live") : null,
+    },
+  });
 }

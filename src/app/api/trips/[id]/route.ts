@@ -11,7 +11,16 @@ export async function GET(_: Request, { params }: Ctx) {
   return dto ? json(dto) : err(404, "Trip not found");
 }
 
-const Patch = z.object({ title: z.string().min(1).max(120), budgetAmount: z.number().positive().nullable(), budgetCurrency: z.string().regex(/^[A-Za-z]{3}$/).transform((s) => s.toUpperCase()) }).partial();
+const Patch = z
+  .object({
+    title: z.string().min(1).max(120),
+    budgetAmount: z.number().positive().nullable(),
+    budgetCurrency: z
+      .string()
+      .regex(/^[A-Za-z]{3}$/)
+      .transform((s) => s.toUpperCase()),
+  })
+  .partial();
 export async function PATCH(req: Request, { params }: Ctx) {
   const id = (await params).id;
   const [data, bad] = await body(req, Patch);

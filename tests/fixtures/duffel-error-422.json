@@ -1,1 +1,11 @@
-{"errors":[{"type":"validation_error","code":"validation_required","title":"Invalid offer request","message":"A departure date is required."}],"meta":{"request_id":"fixture-request"}}
+{
+  "errors": [
+    {
+      "type": "validation_error",
+      "code": "validation_required",
+      "title": "Invalid offer request",
+      "message": "A departure date is required."
+    }
+  ],
+  "meta": { "request_id": "fixture-request" }
+}
