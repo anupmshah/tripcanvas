@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { body, err, json } from "@/lib/http";
+import { invalidateQuote } from "@/lib/price/invalidate";
 
 export const runtime = "nodejs";
 const Layout = z.object({ days: z.array(z.object({ dayId: z.string(), itemIds: z.array(z.string()) })).min(1) });
@@ -24,7 +25,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       if (it.status === "booked" && it.dayId !== col.dayId) return err(409, `"${it.title}" is booked and cannot move to another day`);
     }
   }
-  for (const col of d.days) for (const [order, id] of col.itemIds.entries()) await tx.item.update({ where: { id }, data: { dayId: col.dayId, order } });
+  for (const col of d.days) for (const [order, id] of col.itemIds.entries()) await tx.item.update({ where: { id }, data: { dayId: col.dayId, order, ...invalidateQuote(byId.get(id)!, byId.get(id)!.dayId !== col.dayId) } });
   return json({ ok: true });
   }, { isolationLevel: "Serializable", timeout: 30_000 }); } catch (e) {
     if ((e as { code?: string }).code === "P2034") return err(409, "Trip changed while moving. Reload and retry.");

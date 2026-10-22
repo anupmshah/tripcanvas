@@ -17,6 +17,12 @@ export const TripDraft = DraftFields.superRefine((d, ctx) => {
   if (d.lengthDays && d.route.length && d.route.reduce((n, s) => n + s.nights, 0) !== d.lengthDays - 1) bad("Route nights must sum to lengthDays-1");
 });
 export type TripDraftT = z.infer<typeof TripDraft>;
+export const FromTextInput = z.object({ text: z.string().trim().min(1).max(2000), draft: DraftFields.optional(), change: z.string().max(2000).optional(), action: z.enum(["propose", "create"]).optional() }).superRefine((d, ctx) => {
+  if (d.action === "create" && d.draft) {
+    const result = TripDraft.safeParse(d.draft);
+    if (!result.success) result.error.issues.forEach((i) => ctx.addIssue({ ...i, path: ["draft", ...i.path] }));
+  }
+});
 export function resolveDraftDates(d: TripDraftT): TripDraftT {
   if (!d.lengthDays || !d.startDate) return d;
   let startDate = d.startDate;

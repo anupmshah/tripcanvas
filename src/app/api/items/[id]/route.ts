@@ -1,11 +1,12 @@
 import { z } from "zod";
+import { Time as TimeValue } from "@/lib/patch/schema";
 import { prisma } from "@/lib/db";
 import { toItemDTO } from "@/lib/dto";
 import { body, err, json } from "@/lib/http";
 
 export const runtime = "nodejs";
 type Ctx = { params: Promise<{ id: string }> };
-const Time = z.string().regex(/^\d{2}:\d{2}$/).nullable();
+const Time = TimeValue.nullable();
 const Patch = z.object({
   title: z.string().min(1).max(120), notes: z.string().max(500).nullable(), start: Time, end: Time,
   entered: z.object({ amount: z.number().nonnegative(), currency: z.string().regex(/^[A-Za-z]{3}$/).transform((s) => s.toUpperCase()) }),

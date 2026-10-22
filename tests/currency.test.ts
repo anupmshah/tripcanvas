@@ -3,6 +3,10 @@ import { convert, formatMoney } from "../src/lib/money/currency";
 import { computeTotals } from "../src/lib/money/totals";
 const rates = { base: "USD" as const, rateDate: "2027-03-01", rates: { USD: 1, EUR: 0.9, BHD: 0.376 } };
 describe("currency and honest totals", () => {
+  it("keeps Duffel TEST and fixture amounts separate from Live", () => {
+    const t = computeTotals({ trip: { budgetAmount: null, budgetCurrency: "USD" }, stops: [], days: [{ index: 0, date: "2027-03-01", stopId: "s", items: [{ price: 100, currency: "USD", priceSource: "live", provider: "duffel-test" }, { price: 50, currency: "USD", priceSource: "live", provider: "fixture" }] }] }, rates, "USD");
+    expect(t.live).toBe(0); expect(t.test).toBe(150); expect(t.total).toBe(150);
+  });
   it("converts through USD and preserves BHD precision", () => {
     expect(convert(90, "EUR", "BHD", rates)).toBeCloseTo(37.6);
     expect(convert(37.6, "BHD", "EUR", rates)).toBeCloseTo(90);

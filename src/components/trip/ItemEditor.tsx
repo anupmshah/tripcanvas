@@ -24,10 +24,11 @@ export default function ItemEditor({ item, defaultCurrency, onClose, onSaved }: 
       Object.assign(body, { title, start: start || null, end: end || null });
       if (amount !== "") body.entered = { amount: Number(amount), currency: ccy };
     }
-    const r = await fetch(`/api/items/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    if (!r.ok) { setErr((await r.json()).error ?? "Failed"); setBusy(false); return; }
-    onSaved();
-    onClose();
+    try {
+      const r = await fetch(`/api/items/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (!r.ok) throw new Error((await r.json()).error ?? "Save failed");
+      onSaved(); onClose();
+    } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
   }
 
   return (

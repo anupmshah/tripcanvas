@@ -1,16 +1,14 @@
-import { z } from "zod";
 import { body, err, json } from "@/lib/http";
 import { rateLimit } from "@/lib/rateLimit";
 import { env } from "@/lib/env";
-import { TripDraft, blockingQuestions } from "@/lib/llm/draft";
+import { FromTextInput, blockingQuestions } from "@/lib/llm/draft";
 import { createFromDraft, proposeTrip } from "@/lib/llm/fromText";
 import { LlmInvalidOutput, LlmUnavailable } from "@/lib/llm/openai";
 export const runtime = "nodejs";
-const Input = z.object({ text: z.string().trim().min(1).max(2000), draft: TripDraft.optional(), change: z.string().max(2000).optional(), action: z.enum(["propose", "create"]).optional() });
 export async function POST(req: Request) {
   const limit = rateLimit(`start:${req.headers.get("x-forwarded-for") ?? "local"}`, env.CHAT_RATE_LIMIT_PER_MIN);
   if (!limit.ok) return err(429, "Too many planning requests", { retryAfterSec: limit.retryAfterSec });
-  const [d, bad] = await body(req, Input); if (bad) return bad;
+  const [d, bad] = await body(req, FromTextInput); if (bad) return bad;
   try {
     if (d.action === "create") {
       if (!d.draft || blockingQuestions(d.draft).length || !d.draft.route.length) return err(400, "Complete and review the route and dates first");

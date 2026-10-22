@@ -4,7 +4,7 @@ import { fileURLToPath } from "url";
 
 const compat = new FlatCompat({ baseDirectory: dirname(fileURLToPath(import.meta.url)) });
 const config = [
-  { ignores: [".tmp/**", ".next/**", "node_modules/**", "next-env.d.ts", "prisma/dev.db*"] },
+  { ignores: [".agent-grid/**", ".superpowers/**", ".tmp/**", ".next/**", "node_modules/**", "next-env.d.ts", "prisma/dev.db*"] },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     rules: {

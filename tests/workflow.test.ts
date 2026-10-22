@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
-import { TripDraft, blockingQuestions, resolveDraftDates } from "../src/lib/llm/draft";
+import { TripDraft, FromTextInput, blockingQuestions, resolveDraftDates } from "../src/lib/llm/draft";
 import { linksForItem, airlineSite } from "../src/lib/links/deeplinks";
+import { makeIcs } from "../src/lib/export/ics";
 const draft = {
   destination: "USA", originAirport: "BAH", adults: 2, children: 1, childAges: [], lengthDays: 15,
   earliest: "2026-12-15", latest: "2027-01-05", startDate: "2026-12-16", endDate: "2026-12-30", dateReason: "Fits the window; prices have not been checked.",
@@ -8,6 +9,11 @@ const draft = {
   route: [{ city: "New York", country: "USA", airport: "JFK", localCurrency: "USD", nights: 5, transport: null }, { city: "Washington", country: "USA", airport: "DCA", localCurrency: "USD", nights: 4, transport: "train" }, { city: "Orlando", country: "USA", airport: "MCO", localCurrency: "USD", nights: 5, transport: "flight" }],
   preferenceCandidates: [{ field: "food", value: "vegetarian", evidence: "we are vegetarians" }],
 };
+it("lets chat rebalance edited nights but refuses inconsistent creation", () => {
+  const edited = { ...draft, lengthDays: 20 };
+  expect(FromTextInput.safeParse({ text: "USA", action: "propose", draft: edited }).success).toBe(true);
+  expect(FromTextInput.safeParse({ text: "USA", action: "create", draft: edited }).success).toBe(false);
+});
 it("accepts a 15-day window trip without asking for budget or child ages", () => {
   expect(TripDraft.safeParse(draft).success).toBe(true);
   expect(blockingQuestions(TripDraft.parse(draft))).toEqual([]);
@@ -34,4 +40,17 @@ it("builds booking links from the item's own stop, dates and party", () => {
   const ret = linksForItem({ type: "flight", title: "Return" }, { ...day, index: 6, date: "2026-12-23" }, trip, stops, 6);
   expect(decodeURIComponent(ret[0].url)).toContain("OPO to BAH on 2026-12-23");
   expect(new URL(airlineSite("TP", "TAP")).hostname).toBe("www.flytap.com");
+});
+it("exports safe folded UTF-8 ICS with all-day and overnight local events", () => {
+  const result = makeIcs({ trip: { title: "Test" }, stops: [{ id: "s", city: "Porto" }], days: [{ date: "2026-12-20", stopId: "s", items: [
+    { id: "a", title: "Walk, museum;\r\nBEGIN:VEVENT", start: "23:30", end: "00:30", notes: "é🗺".repeat(100) },
+    { id: "b", title: "Untimed visit", start: null, end: null, notes: null },
+  ] }] });
+  expect(result.startsWith("BEGIN:VCALENDAR\r\n")).toBe(true);
+  expect(result.match(/^BEGIN:VEVENT/gm)).toHaveLength(2);
+  expect(result).toContain("SUMMARY:Walk\\, museum\\;\\nBEGIN:VEVENT");
+  expect(result).toContain("DTEND:20261221T003000");
+  expect(result).toContain("DTSTART;VALUE=DATE:20261220");
+  expect(result.replaceAll("\r\n", "").includes("\n")).toBe(false);
+  expect(result.split("\r\n").every((s) => Buffer.byteLength(s, "utf8") <= 75)).toBe(true);
 });

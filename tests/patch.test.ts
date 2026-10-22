@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { ChatOutput, NewItem, PatchOp } from "../src/lib/patch/schema";
-import { annotateOps, type PState } from "../src/lib/patch/plan";
+import { ChatOutput, NewItem, PatchOp, Time } from "../src/lib/patch/schema";
+import { annotateOps, offerFits, type PState } from "../src/lib/patch/plan";
+import { retryConflict } from "../src/lib/db";
 
 const state: PState = {
   startDate: "2027-03-01",
@@ -9,6 +10,24 @@ const state: PState = {
 };
 const item = { type: "food" as const, title: "Dinner", placeQuery: null, start: null, end: null, notes: null, estimate: { low: 10, mid: 20, high: 30, currency: "EUR" }, offerId: null };
 describe("patch validation and booked protection", () => {
+  it("retries serialization conflicts but propagates unrelated errors", async () => {
+    let attempts = 0;
+    expect(await retryConflict(async () => { if (++attempts < 3) throw { code: "P2034" }; return "saved"; })).toBe("saved");
+    expect(attempts).toBe(3);
+    await expect(retryConflict(async () => { throw new Error("invalid"); })).rejects.toThrow("invalid");
+  });
+  it("rejects invalid manual times and clears quotes for the final route/date", () => {
+    for (const t of ["99:99", "24:00", "12:60", "9:00"]) expect(Time.safeParse(t).success).toBe(false);
+    expect(Time.parse("23:59")).toBe("23:59");
+    const s = structuredClone(state); s.originAirport = "BAH"; s.stops[0].airport = "LIS"; s.stops[1].airport = "OPO";
+    const offer = { provider: "duffel" as const, price: 100, currency: "USD", fetchedAt: new Date().toISOString(), deepLink: "https://example.com", isLive: true, leg: { origin: "BAH", dest: "LIS", depart: s.startDate, dayIndex: 0 } };
+    expect(offerFits(s, 0, offer)).toBe(true);
+    expect(offerFits(s, 1, offer)).toBe(false);
+    s.stops[0].airport = "JFK";
+    expect(offerFits(s, 0, offer)).toBe(false);
+    s.stops[0].airport = "LIS"; s.startDate = "2027-03-02";
+    expect(offerFits(s, 0, offer)).toBe(false);
+  });
   it("requires complete items and ordered estimates", () => {
     expect(NewItem.safeParse(item).success).toBe(true);
     expect(NewItem.safeParse({ ...item, estimate: { low: 30, mid: 20, high: 10, currency: "EUR" } }).success).toBe(false);

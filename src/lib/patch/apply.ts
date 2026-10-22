@@ -1,18 +1,23 @@
 import "server-only";
-import { prisma, type Db } from "../db";
+import { prisma, retryConflict, type Db } from "../db";
 import { getTripDTO } from "../dto";
 import { planDays, tripLabel } from "../stops";
 import type { AnnotatedOp } from "./schema";
-import { annotateOps, stateFromDTO, type AddPayload, type PState } from "./plan";
+import { annotateOps, stateFromDTO, offerFits, type AddPayload, type PState } from "./plan";
+import { invalidateQuote } from "../price/invalidate";
 
 /** Write a planned state to the DB: stops, days (contiguous), item order; new items from `add` payloads. */
 export async function persistState(tx: Db, tripId: string, S: PState) {
   const plan = planDays(S.startDate, S.stops.map((s) => s.nights));
   const [stops, days, items] = await Promise.all([
-    tx.stop.findMany({ where: { tripId } }), tx.day.findMany({ where: { tripId } }), tx.item.findMany({ where: { tripId }, select: { id: true, dayId: true, order: true } }),
+    tx.stop.findMany({ where: { tripId } }), tx.day.findMany({ where: { tripId } }), tx.item.findMany({ where: { tripId } }),
   ]);
   const keepItems = new Set(S.days.flatMap((d) => d.items.map((i) => i.id)));
   const dbItem = new Map(items.map((i) => [i.id, i]));
+  const routeChanged = stops.length !== S.stops.length || S.stops.some((s, index) => {
+    const old = stops.find((x) => x.id === s.id);
+    return !old || old.order !== index || old.airport !== s.airport || old.startDate !== plan.ranges[index].startDate || old.endDate !== plan.ranges[index].endDate;
+  });
   await tx.item.deleteMany({ where: { id: { in: items.filter((i) => !keepItems.has(i.id)).map((i) => i.id) } } });
   await tx.day.deleteMany({ where: { id: { in: days.filter((d) => !S.days.some((x) => x.id === d.id)).map((d) => d.id) } } });
   // free the unique (tripId, order/index) slots before renumbering
@@ -30,8 +35,15 @@ export async function persistState(tx: Db, tripId: string, S: PState) {
     else await tx.day.create({ data: { id: d.id, tripId, ...data } });
     for (const [order, it] of d.items.entries()) {
       const cur = dbItem.get(it.id);
-      if (cur) { if (it.status !== "booked" && (cur.dayId !== d.id || cur.order !== order)) await tx.item.update({ where: { id: it.id }, data: { dayId: d.id, order } }); }
-      else if (it.add) await tx.item.create({ data: { id: it.id, tripId, dayId: d.id, order, ...newItemData(it.add) } });
+      if (cur && it.status !== "booked") {
+        const old = days.find((x) => x.id === cur.dayId);
+        const changed = cur.dayId !== d.id || old?.date !== data.date || old?.stopId !== d.stopId || (cur.type === "flight" && routeChanged);
+        if (changed || cur.order !== order) await tx.item.update({ where: { id: it.id }, data: { dayId: d.id, order, ...invalidateQuote(cur, changed) } });
+      }
+      else if (it.add) {
+        const add = { ...it.add, offer: it.add.offer && offerFits(S, index, it.add.offer) ? it.add.offer : undefined };
+        await tx.item.create({ data: { id: it.id, tripId, dayId: d.id, order, ...newItemData(add) } });
+      }
     }
   }
   await tx.stop.deleteMany({ where: { id: { in: stops.filter((s) => !S.stops.some((x) => x.id === s.id)).map((s) => s.id) } } });
@@ -52,7 +64,7 @@ export function newItemData({ item, geo, offer }: AddPayload) {
 export async function applyPatch(patchId: string): Promise<{ applied: number; skipped: { index: number; reason: string }[] } | null> {
   const patch = await prisma.pendingPatch.findUnique({ where: { id: patchId } });
   if (!patch || patch.status !== "pending") return null;
-  return prisma.$transaction(async (tx) => {
+  return retryConflict(() => prisma.$transaction(async (tx) => {
     const claimed = await tx.pendingPatch.updateMany({ where: { id: patchId, status: "pending" }, data: { status: "applied", decidedAt: new Date() } });
     if (claimed.count !== 1) return null;
     const stored = JSON.parse(patch.opsJson) as AnnotatedOp[];
@@ -66,5 +78,5 @@ export async function applyPatch(patchId: string): Promise<{ applied: number; sk
       ...ops.flatMap((o, k) => (o.status === "skipped" ? [{ index: okIdx[k], reason: o.reason ?? "skipped" }] : [])),
     ];
     return { applied: ops.length - ops.filter((o) => o.status === "skipped").length, skipped };
-  }, { timeout: 45000, maxWait: 10000, isolationLevel: "Serializable" });
+  }, { timeout: 45000, maxWait: 10000, isolationLevel: "Serializable" }));
 }

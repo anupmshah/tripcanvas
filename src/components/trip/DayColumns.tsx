@@ -31,10 +31,11 @@ function AddItem({ tripId, dayIndex, onAdded }: { tripId: string; dayIndex: numb
   return (
     <form className="space-y-1 rounded border bg-slate-50 p-1.5" onSubmit={async (e) => {
       e.preventDefault(); setBusy(true); setErr("");
-      const r = await fetch(`/api/trips/${tripId}/items`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dayIndex, type, title }) });
-      setBusy(false);
-      if (!r.ok) return setErr((await r.json()).error ?? "Failed");
-      setTitle(""); setOpen(false); onAdded();
+      try {
+        const r = await fetch(`/api/trips/${tripId}/items`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dayIndex, type, title }) });
+        if (!r.ok) throw new Error((await r.json()).error ?? "Add failed");
+        setTitle(""); setOpen(false); onAdded();
+      } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
     }}>
       <select value={type} onChange={(e) => setType(e.target.value)} className="w-full rounded border text-xs">
         {["activity", "food", "stay", "transport", "flight"].map((t) => <option key={t}>{t}</option>)}
@@ -103,11 +104,12 @@ export default function DayColumns({ dto, setDto, reload, weather, toast, ...h }
     const before = dto;
     setDto({ ...dto, days }); // optimistic
     const changed = days.filter((d) => d.id === from.id || d.id === to.id);
-    const r = await fetch(`/api/trips/${dto.trip.id}/layout`, {
+    try { const r = await fetch(`/api/trips/${dto.trip.id}/layout`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ days: changed.map((d) => ({ dayId: d.id, itemIds: d.items.map((i) => i.id) })) }),
     });
-    if (!r.ok) { setDto(before); toast((await r.json()).error ?? "Move failed"); } else reload();
+    if (!r.ok) throw new Error((await r.json()).error ?? "Move failed");
+    reload(); } catch (e) { setDto(before); toast((e as Error).message); }
   }
 
   return (

@@ -14,14 +14,14 @@ export type AddPayload = { item: NewItemT; geo?: Geo; offer?: PriceOffer };
 export type PItem = { id: string; status: string; add?: AddPayload };
 export type PDay = { id: string; stopId: string; items: PItem[] };
 /** days = one day per night of each stop (in stop order) + a final departure day owned by the last stop. */
-export type PState = { startDate: string; stops: PStop[]; days: PDay[] };
+export type PState = { startDate: string; originAirport?: string; stops: PStop[]; days: PDay[] };
 export type StopCtx = { lat: number | null; lng: number | null; countryCode: string | null };
 
 export const MAX_STOPS = 8;
 
 export function stateFromDTO(dto: TripDTO): PState {
   return {
-    startDate: dto.trip.startDate,
+    startDate: dto.trip.startDate, originAirport: dto.trip.originAirport,
     stops: dto.stops.map((s) => ({
       id: s.id, city: s.city, country: s.country, countryCode: s.countryCode, lat: s.lat, lng: s.lng, airport: s.airport,
       localCurrency: s.localCurrency, nights: diffDays(s.startDate, s.endDate),
@@ -106,6 +106,14 @@ const locate = (S: PState, id: string) => {
 };
 const insertAt = (day: PDay, item: PItem, pos: number | null) => day.items.splice(Math.min(pos ?? day.items.length, day.items.length), 0, item);
 
+export function offerFits(S: PState, index: number, offer: PriceOffer) {
+  const leg = offer.leg, stop = S.stops.find((s) => s.id === S.days[index]?.stopId);
+  const position = S.stops.findIndex((s) => s.id === stop?.id), home = index === S.days.length - 1;
+  const origin = home ? stop?.airport : index === 0 ? S.originAirport : S.stops[position - 1]?.airport;
+  const dest = home ? S.originAirport : stop?.airport;
+  return !!leg && leg.dayIndex === index && leg.depart === addDays(S.startDate, index) && leg.origin === origin && leg.dest === dest;
+}
+
 /**
  * Run ops in order against a copy of the trip. Returns the annotated ops, the final state, and for every `add`
  * the location context (the stop of the day it lands on) so the caller can verify the place on OSM.
@@ -129,7 +137,7 @@ export function annotateOps(start: PState, ops: (PatchOpT & { geo?: Geo; offer?:
         const day = S.days[raw.dayIndex];
         if (!day) return skip(`day ${raw.dayIndex} does not exist (trip has ${S.days.length} days, index from 0)`);
         const candidate = raw.item.type === "flight" && raw.item.offerId ? known.get(raw.item.offerId) : undefined;
-        const offer = candidate && (!candidate.leg || (candidate.leg.dayIndex === raw.dayIndex && candidate.leg.depart === addDays(S.startDate, raw.dayIndex))) ? candidate : undefined;
+        const offer = candidate && offerFits(S, raw.dayIndex, candidate) ? candidate : undefined;
         const item: NewItemT = {
           ...raw.item,
           offerId: offer ? raw.item.offerId : null, // never keep an offer the server did not supply

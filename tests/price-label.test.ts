@@ -7,3 +7,9 @@ it("marks 31-minute fares stale but never presents estimates as live", () => {
   expect(priceLabel("estimate", now.toISOString(), now).tone).toBe("estimate");
   expect(priceLabel(null, null, now).text).toContain("check on provider");
 });
+import { invalidateQuote } from "../src/lib/price/invalidate";
+it("invalidates moved live quotes but keeps booked and entered prices", () => {
+  expect(invalidateQuote({ status: "proposed", priceSource: "live" }, true)).toMatchObject({ price: null, offerId: null, sourceUrl: null });
+  expect(invalidateQuote({ status: "booked", priceSource: "live" }, true)).toEqual({});
+  expect(invalidateQuote({ status: "proposed", priceSource: "entered" }, true)).toEqual({});
+});

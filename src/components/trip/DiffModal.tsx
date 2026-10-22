@@ -5,6 +5,7 @@ import type { TripDTO } from "@/lib/dto";
 export type Proposal = { id: string; ops: AnnotatedOp[] };
 export default function DiffModal({ patch, dto, onDone }: { patch: Proposal; dto: TripDTO; onDone: () => void }) {
   const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ applied: number; skipped: { index: number; reason: string }[] } | null>(null);
   const itemName = (id: string) => dto.days.flatMap((d) => d.items).find((i) => i.id === id)?.title ?? id;
   async function decide(action: string) {
     setBusy(true); setError("");
@@ -12,7 +13,7 @@ export default function DiffModal({ patch, dto, onDone }: { patch: Proposal; dto
       const r = await fetch(`/api/patches/${patch.id}/${action}`, { method: "POST" });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error ?? "Decision failed");
-      onDone();
+      if (action === "apply" && d.skipped?.length) setResult(d); else onDone();
     } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
   }
   return <div className="fixed inset-0 z-[2000] grid place-items-center bg-black/40 p-5" role="dialog" aria-modal="true" aria-label="Review proposed changes"><div className="max-h-[85vh] w-full max-w-xl space-y-3 overflow-y-auto rounded-xl bg-white p-5 shadow-xl">
@@ -28,6 +29,6 @@ export default function DiffModal({ patch, dto, onDone }: { patch: Proposal; dto
       {o.reason && <p>{o.status === "skipped" ? "Skipped: " : ""}{o.reason}</p>}
     </div>)}
     {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-    <div className="flex gap-3"><button disabled={busy} onClick={() => decide("apply")} className="rounded bg-sky-700 px-3 py-2 text-sm text-white disabled:opacity-50">{busy ? "Saving…" : "Accept all ok ops"}</button><button disabled={busy} onClick={() => decide("reject")}>Reject</button></div>
+    {result ? <div role="status"><p>{result.applied} changes applied.</p>{result.skipped.map((s) => <p key={s.index}>Change {s.index + 1} skipped: {s.reason}</p>)}<button onClick={onDone}>Close and refresh</button></div> : <div className="flex gap-3"><button disabled={busy} onClick={() => decide("apply")} className="rounded bg-sky-700 px-3 py-2 text-sm text-white disabled:opacity-50">{busy ? "Saving…" : "Accept all ok ops"}</button><button disabled={busy} onClick={() => decide("reject")}>Reject</button></div>}
   </div></div>;
 }

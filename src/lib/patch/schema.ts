@@ -5,7 +5,7 @@ import type { PriceOffer } from "../price/types";
 export const Estimate = z
   .object({ low: z.number().nonnegative(), mid: z.number().nonnegative(), high: z.number().nonnegative(), currency: z.string().length(3) })
   .refine((e) => e.low <= e.mid && e.mid <= e.high, "low<=mid<=high");
-const Time = z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "Use HH:MM local time (e.g. 09:00) or null; never a date or datetime");
+export const Time = z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "Use HH:MM local time (e.g. 09:00) or null; never a date or datetime");
 export const NewItem = z.object({
   type: z.enum(["stay", "flight", "activity", "food", "transport"]),
   title: z.string().min(1).max(120),

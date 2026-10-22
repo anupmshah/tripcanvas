@@ -11,3 +11,6 @@ neon.private.txt
 .tmp
 tsconfig.tsbuildinfo
 neon.private.txt
+openai.private.txt
+.agent-grid/
+.superpowers/

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Time as TimeValue } from "@/lib/patch/schema";
 import { prisma } from "@/lib/db";
 import { getTripDTO, toItemDTO } from "@/lib/dto";
 import { flightsForTrip } from "@/lib/price/legs";
@@ -6,7 +7,7 @@ import { verifyPlace } from "@/lib/geo/verify";
 import { body, err, json } from "@/lib/http";
 
 export const runtime = "nodejs";
-const Time = z.string().regex(/^\d{2}:\d{2}$/);
+const Time = TimeValue;
 const Create = z.object({
   dayIndex: z.number().int().min(0), type: z.enum(["stay", "flight", "activity", "food", "transport"]),
   title: z.string().min(1).max(120), placeQuery: z.string().max(200).nullish(),

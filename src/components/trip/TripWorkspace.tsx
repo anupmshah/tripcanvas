@@ -12,6 +12,7 @@ import PriceLabel from "./PriceLabel";
 import FlightOffers from "./FlightOffers";
 import BookingLinks from "./BookingLinks";
 import MarkBookedDialog from "./MarkBookedDialog";
+import TripActions from "./TripActions";
 import type { Weather } from "./shared";
 
 export default function TripWorkspace({ initial, initialWarning = "" }: { initial: TripDTO; initialWarning?: string }) {
@@ -26,8 +27,10 @@ export default function TripWorkspace({ initial, initialWarning = "" }: { initia
 
   const toast = useCallback((m: string) => { setMsg(m); setTimeout(() => setMsg(""), 4000); }, []);
   const reload = useCallback(async () => {
+    try {
     const r = await fetch(`/api/trips/${id}`);
     if (r.ok) setDto(await r.json()); else toast("Could not refresh the trip");
+    } catch { toast("Could not refresh the trip. Check the connection and retry."); }
   }, [id, toast]);
 
   useEffect(() => {
@@ -39,8 +42,10 @@ export default function TripWorkspace({ initial, initialWarning = "" }: { initia
   }, [id, dto.trip.endDate]);
 
   async function del(item: ItemDTO) {
+    try {
     const r = await fetch(`/api/items/${item.id}`, { method: "DELETE" });
     if (!r.ok) toast((await r.json()).error ?? "Delete failed"); else reload();
+    } catch { toast("Could not delete. Check the connection and retry."); }
   }
 
   const t = dto.trip;
@@ -53,6 +58,7 @@ export default function TripWorkspace({ initial, initialWarning = "" }: { initia
           <h1 className="text-xl font-bold">{t.title}</h1>
           <span className="text-sm text-slate-600">{t.destination} · {t.startDate} → {t.endDate} · {t.adults} adult{t.adults === 1 ? "" : "s"}{t.children ? ` + ${t.children} child` : ""}{t.budgetAmount ? ` · Budget ${t.budgetAmount.toLocaleString("en-GB")} ${t.budgetCurrency}` : ""}</span>
         </div>
+        <TripActions tripId={id} />
         <StopStrip stops={dto.stops} />
         <FlightOffers dto={dto} reload={reload} />
         {msg && <div className="rounded bg-red-50 p-2 text-sm text-red-700" role="alert">{msg}</div>}

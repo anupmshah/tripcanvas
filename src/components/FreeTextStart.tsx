@@ -16,12 +16,13 @@ export default function FreeTextStart() {
   const city = (i: number, p: Partial<TripDraftT["route"][number]>) => draft && set({ route: draft.route.map((s, k) => i === k ? { ...s, ...p } : s) });
   async function request(action = "propose", fresh = false) {
     setBusy(action); setError("");
+    let navigating = false;
     try {
       const r = await fetch("/api/trips/from-text", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, draft: fresh ? undefined : draft ?? undefined, change: fresh ? undefined : change || undefined, action }) });
       const data = await r.json(); if (!r.ok) throw new Error(data.error ?? "Planning failed");
-      if (data.id) router.push(`/trip/${data.id}${data.warning ? "?initial=failed" : ""}`);
+      if (data.id) { navigating = true; router.push(`/trip/${data.id}${data.warning ? "?initial=failed" : ""}`); }
       else { setDraft(data.draft); setChange(""); }
-    } catch (e) { setError((e as Error).message); } finally { setBusy(""); }
+    } catch (e) { setError((e as Error).message); } finally { if (!navigating) setBusy(""); }
   }
   return <section className="space-y-3 rounded-xl border border-sky-200 bg-white p-5 shadow-sm">
     <h2 className="text-xl font-bold">Describe your trip</h2><p className="text-sm text-slate-600">Tell us where, who, and when. Review the dates and city route before creating anything.</p>
@@ -30,7 +31,7 @@ export default function FreeTextStart() {
       <div className="flex gap-3"><button disabled={!!busy} className="rounded bg-sky-700 px-4 py-2 text-sm text-white disabled:opacity-50">{busy === "propose" ? "Choosing dates and a route…" : "Propose my trip"}</button><button type="button" disabled={!!busy} onClick={() => { setText(example); setDraft(null); }} className="text-sm text-sky-700">Use USA example</button></div>
     </form>
     {questions.length > 0 && <div className="rounded bg-amber-50 p-3 text-sm"><strong>A little more detail:</strong>{questions.map((q) => <p key={q}>{q}</p>)}</div>}
-    {draft && <div className="space-y-3 border-t pt-3">
+    {draft && <fieldset disabled={!!busy} className="space-y-3 border-t pt-3">
       <h3 className="font-semibold">Your proposed route · edit before accepting</h3>
       <div className="flex flex-wrap gap-2">
         <label className="text-xs">Country / region <input className={input} value={draft.destination ?? ""} onChange={(e) => set({ destination: e.target.value || null })} /></label>
@@ -56,7 +57,7 @@ export default function FreeTextStart() {
       <p className="text-xs text-slate-600">{draft.budgetAmount == null ? "No budget set — the first plan will show estimates for review. " : ""}Unknown child ages use age 10 for flight searches; verify ages and fares with the provider. Preferences are saved only after you confirm them in chat.</p>
       <form onSubmit={(e) => { e.preventDefault(); request(); }} className="flex gap-2"><input aria-label="Change the proposed trip" className={`${input} flex-1`} value={change} required maxLength={2000} onChange={(e) => setChange(e.target.value)} placeholder={questions.length ? "Your answers…" : "Type a change: swap DC for Chicago, fewer cities…"} /><button disabled={!!busy} className="rounded border px-3 text-sm">Update proposal</button></form>
       <button disabled={!!busy || questions.length > 0} onClick={() => request("create")} className="rounded bg-emerald-700 px-4 py-2 text-sm text-white disabled:opacity-50">{busy === "create" ? "Building itinerary & checking places… this can take a few minutes" : "Accept route & create itinerary"}</button>
-    </div>}
+    </fieldset>}
     {error && <p role="alert" className="rounded bg-red-50 p-2 text-sm text-red-700">{error} Edit the draft or retry.</p>}
   </section>;
 }
