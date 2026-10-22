@@ -30,6 +30,7 @@ model Trip {
   endDate        String
   adults         Int           @default(2)
   children       Int           @default(0)
+  infants        Int           @default(0)
   budgetAmount   Float?
   budgetCurrency String        @default("BHD")
   createdAt      DateTime      @default(now())

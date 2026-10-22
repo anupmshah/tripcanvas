@@ -5,6 +5,7 @@ import { computeTotals } from "./money/totals";
 import { priceLabel } from "./money/priceLabel";
 import { convert } from "./money/currency";
 import { linksForItem } from "./links/deeplinks";
+import { ensureFlightPrices } from "./price/estimate";
 
 export type ItemDTO = Omit<Item, "createdAt" | "updatedAt" | "priceFetchedAt"> & { priceFetchedAt: string | null; links: { label: string; url: string }[]; label: ReturnType<typeof priceLabel>; displayPrice?: number | null };
 export type DayDTO = { id: string; index: number; date: string; stopId: string; items: ItemDTO[] };
@@ -27,6 +28,7 @@ export async function getTripDTO(id: string, db: Db = prisma): Promise<TripDTO |
     include: { stops: { orderBy: { order: "asc" } }, days: { orderBy: { index: "asc" }, include: { items: { orderBy: { order: "asc" } } } } },
   });
   if (!t) return null;
+  if (db === prisma) await ensureFlightPrices(t);
   const { stops, days, createdAt: _c, updatedAt: _u, ...trip } = t;
   const [rates, profile] = await Promise.all([getRates(), db.profile.findUnique({ where: { id: "default" } })]);
   const displayCurrency = profile?.displayCurrency ?? "BHD";

@@ -38,7 +38,7 @@ export default function FreeTextStart() {
         <label className="text-xs">From (IATA) <input className={`${input} w-20`} maxLength={3} value={draft.originAirport} onChange={(e) => set({ originAirport: e.target.value.toUpperCase() })} /></label>
         <label className="text-xs">Adults <input className={`${input} w-14`} type="number" min={1} max={9} value={draft.adults} onChange={(e) => set({ adults: +e.target.value })} /></label>
         <label className="text-xs">Children <input className={`${input} w-14`} type="number" min={0} max={8} value={draft.children} onChange={(e) => set({ children: +e.target.value })} /></label>
-        <label className="text-xs">Child ages, if known <input className={`${input} w-28`} placeholder="e.g. 7, 12" value={draft.childAges.join(", ")} onChange={(e) => set({ childAges: e.target.value ? e.target.value.split(",").map((v) => Number(v.trim())) : [] })} /></label>
+        <label className="text-xs">Infants under 2 <input className={`${input} w-14`} type="number" min={0} max={8} value={draft.infants ?? 0} onChange={(e) => set({ infants: +e.target.value })} /></label><label className="text-xs">Child ages, if known <input className={`${input} w-28`} placeholder="e.g. 7, 12" value={draft.childAges.join(", ")} onChange={(e) => set({ childAges: e.target.value ? e.target.value.split(",").map((v) => Number(v.trim())) : [] })} /></label>
       </div>
       <div className="flex flex-wrap gap-2 text-xs">
         <label>Length (calendar days) <input className={`${input} w-16`} type="number" min={2} max={61} value={draft.lengthDays ?? ""} onChange={(e) => set({ lengthDays: +e.target.value || null })} /></label>

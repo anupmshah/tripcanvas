@@ -4,7 +4,7 @@ Describe a trip, review an editable multi-city route, then generate an itinerary
 
 ## Windows setup
 
-Preserve an existing `.env`. For a new installation, copy `.env.example` to `.env` and fill its server-only settings. `OPENAI_API_KEY` uses `gpt-4.1`; `DUFFEL_ACCESS_TOKEN` is optional. Missing Duffel credentials produce unpriced Google Flights/Skyscanner links. Never commit credentials.
+Preserve an existing `.env`. For a new installation, copy `.env.example` to `.env` and fill its server-only settings. `OPENAI_API_KEY` uses `gpt-4.1`; `DUFFEL_ACCESS_TOKEN` is optional. Missing Duffel credentials keep Google Flights/Skyscanner links and use cached, labelled AI flight estimates (USD per adult/child/lap infant, multiplied by the party and converted for display). Live Duffel offers take precedence over estimates; editing a price saves Entered. Never commit credentials.
 
 ```powershell
 npm install

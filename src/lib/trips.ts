@@ -2,7 +2,7 @@ import type { Db } from "./db";
 import { planDays, tripLabel, type StopInput } from "./stops";
 
 export type TripInput = {
-  title: string; originAirport: string; startDate: string; adults: number; children: number;
+  title: string; originAirport: string; startDate: string; adults: number; children: number; infants?: number;
   budgetAmount?: number | null; budgetCurrency?: string; stops: StopInput[];
 };
 
@@ -12,7 +12,7 @@ export async function createTrip(db: Db, i: TripInput) {
   const trip = await db.trip.create({
     data: {
       title: i.title, destination: tripLabel(i.stops), originAirport: i.originAirport.toUpperCase(),
-      startDate: i.startDate, endDate: plan.endDate, adults: i.adults, children: i.children,
+      startDate: i.startDate, endDate: plan.endDate, adults: i.adults, children: i.children, infants: i.infants ?? 0,
       budgetAmount: i.budgetAmount ?? null, budgetCurrency: i.budgetCurrency ?? "BHD",
     },
   });

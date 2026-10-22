@@ -7,7 +7,7 @@ import { DeepLinkProvider } from "./deeplink";
 import { DuffelProvider } from "./duffel";
 import { FixtureProvider } from "./fixture";
 import type { PriceOffer } from "./types";
-export type Search = { origin: string; dest: string; dates: { depart: string; return?: string }; travellers: { adults: number; children: number } };
+export type Search = { origin: string; dest: string; dates: { depart: string; return?: string }; travellers: { adults: number; children: number; infants?: number } };
 type Stored = { offers: PriceOffer[]; source: string; error?: string; fetchedAt: number };
 export type Cache = { get: (key: string) => Promise<Stored | null>; set: (key: string, value: Stored) => Promise<void> };
 const dbCache: Cache = {

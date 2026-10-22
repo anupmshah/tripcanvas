@@ -19,7 +19,7 @@ export class DuffelProvider implements PriceProvider {
     const r = await fetch("https://api.duffel.com/air/offer_requests?return_offers=true&supplier_timeout=15000", {
       method: "POST", signal: AbortSignal.timeout(20_000),
       headers: { Authorization: `Bearer ${this.token}`, "Duffel-Version": DUFFEL_VERSION, Accept: "application/json", "Content-Type": "application/json" },
-      body: JSON.stringify({ data: { slices, passengers: [...Array.from({ length: travellers.adults }, () => ({ type: "adult" })), ...Array.from({ length: travellers.children }, () => ({ age: 10 }))], cabin_class: "economy", max_connections: 1 } }),
+      body: JSON.stringify({ data: { slices, passengers: [...Array.from({ length: travellers.adults }, () => ({ type: "adult" })), ...Array.from({ length: travellers.children }, () => ({ age: 10 })), ...Array.from({ length: travellers.infants ?? 0 }, () => ({ age: 1 }))], cabin_class: "economy", max_connections: 1 } }),
     });
     if (!r.ok) throw new Error(`Duffel returned HTTP ${r.status}`);
     return normalizeOffers(await r.json(), this.token.startsWith("duffel_test_") ? "duffel-test" : "duffel", flightUrls(...args)[0].url);

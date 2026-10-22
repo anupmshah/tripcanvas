@@ -56,7 +56,7 @@ export default function TripWorkspace({ initial, initialWarning = "" }: { initia
       <section className="min-w-0 flex-1 space-y-2 overflow-y-auto p-3">
         <div className="flex flex-wrap items-baseline gap-x-3">
           <h1 className="text-xl font-bold">{t.title}</h1>
-          <span className="text-sm text-slate-600">{t.destination} · {t.startDate} → {t.endDate} · {t.adults} adult{t.adults === 1 ? "" : "s"}{t.children ? ` + ${t.children} child` : ""}{t.budgetAmount ? ` · Budget ${t.budgetAmount.toLocaleString("en-GB")} ${t.budgetCurrency}` : ""}</span>
+          <span className="text-sm text-slate-600">{t.destination} · {t.startDate} → {t.endDate} · {t.adults} adult{t.adults === 1 ? "" : "s"}{t.children ? ` + ${t.children} child` : ""}{t.infants ? ` + ${t.infants} infant` : ""}{t.budgetAmount ? ` · Budget ${t.budgetAmount.toLocaleString("en-GB")} ${t.budgetCurrency}` : ""}</span>
         </div>
         <TripActions tripId={id} />
         <StopStrip stops={dto.stops} />

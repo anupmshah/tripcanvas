@@ -5,7 +5,7 @@ export function airlineSite(iata: string | undefined, name: string) {
   const sites: Record<string, string> = { GF: "gulfair.com", TP: "flytap.com", EK: "emirates.com", QR: "qatarairways.com", EY: "etihad.com", TK: "turkishairlines.com", BA: "britishairways.com", LH: "lufthansa.com", AF: "airfrance.com", KL: "klm.com", IB: "iberia.com", U2: "easyjet.com", FR: "ryanair.com" };
   return iata && sites[iata] ? `https://www.${sites[iata]}` : `https://www.google.com/search?q=${enc(`${name} official airline site`)}`;
 }
-export function linksForItem(item: { type: string; title: string }, day: { index: number; date: string; stopId: string }, trip: { originAirport: string; adults: number; children: number }, stops: { id: string; order: number; city: string; airport: string | null; endDate: string }[], lastDayIndex: number) {
+export function linksForItem(item: { type: string; title: string }, day: { index: number; date: string; stopId: string }, trip: { originAirport: string; adults: number; children: number; infants?: number }, stops: { id: string; order: number; city: string; airport: string | null; endDate: string }[], lastDayIndex: number) {
   const stop = stops.find((s) => s.id === day.stopId)!;
   if (item.type === "flight") {
     const ret = day.index === lastDayIndex;

@@ -1,8 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { convert, formatMoney } from "../src/lib/money/currency";
 import { computeTotals } from "../src/lib/money/totals";
+import { FlightEstimate, flightPartyPrice } from "../src/lib/money/flight";
 const rates = { base: "USD" as const, rateDate: "2027-03-01", rates: { USD: 1, EUR: 0.9, BHD: 0.376 } };
 describe("currency and honest totals", () => {
+  it("multiplies USD flight ranges by adults, children and infants before FX and totals", () => {
+    const estimate = FlightEstimate.parse({ currency: "USD", adult: { low: 100, mid: 200, high: 300 }, child: { low: 50, mid: 100, high: 150 }, infant: { low: 10, mid: 20, high: 30 } });
+    const p = flightPartyPrice(estimate, { adults: 2, children: 1, infants: 1 });
+    expect(p).toEqual({ price: 520, priceLow: 260, priceHigh: 780, currency: "USD" });
+    const t = computeTotals({ trip: { budgetAmount: 1, budgetCurrency: "BHD" }, stops: [{ id: "s", city: "NYC" }], days: [{ index: 0, date: "2026-12-15", stopId: "s", items: [{ ...p, priceSource: "estimate" }] }] }, rates, "BHD");
+    expect(t.estimate.mid).toBeCloseTo(195.52); expect(t.unpricedCount).toBe(0); expect(t.overBudget).toBe(true);
+    expect(t.perDay[0].amount).toBe(t.total); expect(t.perCity[0].amount).toBe(t.total);
+    expect(FlightEstimate.safeParse({ ...estimate, adult: { low: 200, mid: 100, high: 300 } }).success).toBe(false);
+  });
   it("keeps Duffel TEST and fixture amounts separate from Live", () => {
     const t = computeTotals({ trip: { budgetAmount: null, budgetCurrency: "USD" }, stops: [], days: [{ index: 0, date: "2027-03-01", stopId: "s", items: [{ price: 100, currency: "USD", priceSource: "live", provider: "duffel-test" }, { price: 50, currency: "USD", priceSource: "live", provider: "fixture" }] }] }, rates, "USD");
     expect(t.live).toBe(0); expect(t.test).toBe(150); expect(t.total).toBe(150);

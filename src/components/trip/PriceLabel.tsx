@@ -9,5 +9,6 @@ export default function PriceLabel({ item, displayCurrency }: { item: ItemDTO; d
     {item.priceSource === "estimate" && item.priceLow != null && item.priceHigh != null && item.currency && <span> ({formatMoney(item.priceLow, item.currency)}–{formatMoney(item.priceHigh, item.currency)})</span>}
     {item.displayPrice != null && item.currency !== displayCurrency && <span> ≈ {formatMoney(item.displayPrice, displayCurrency)}</span>}
     {item.priceFetchedAt && <span className="block opacity-75">{item.priceFetchedAt.slice(0, 16).replace("T", " ")} UTC{item.label.mayHaveChanged && test ? " · may have changed" : ""}</span>}
+    {item.type === "flight" && item.priceSource === "estimate" && <span className="block">Estimate only, check live price before booking.</span>}
   </div>;
 }

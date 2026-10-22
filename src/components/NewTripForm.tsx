@@ -13,6 +13,7 @@ export default function NewTripForm({ homeAirport }: { homeAirport: string }) {
   const [start, setStart] = useState("");
   const [adults, setAdults] = useState(2);
   const [children, setChildren] = useState(0);
+  const [infants, setInfants] = useState(0);
   const [budget, setBudget] = useState("");
   const [cities, setCities] = useState<City[]>([blank()]);
   const [busy, setBusy] = useState(false);
@@ -36,7 +37,7 @@ export default function NewTripForm({ homeAirport }: { homeAirport: string }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: title || cities.map((c) => c.city).join(" + "), originAirport: origin, startDate: start, adults, children,
+          title: title || cities.map((c) => c.city).join(" + "), originAirport: origin, startDate: start, adults, children, infants,
           budgetAmount: budget ? Number(budget) : null,
           stops: cities.map((c) => ({ ...c, airport: c.airport || null })),
         }),
@@ -59,6 +60,7 @@ export default function NewTripForm({ homeAirport }: { homeAirport: string }) {
         <input className={input} type="date" required value={start} onChange={(e) => setStart(e.target.value)} />
         <label className="text-sm">Adults <input className={`${input} w-14`} type="number" min={1} value={adults} onChange={(e) => setAdults(+e.target.value)} /></label>
         <label className="text-sm">Children <input className={`${input} w-14`} type="number" min={0} value={children} onChange={(e) => setChildren(+e.target.value)} /></label>
+        <label className="text-sm">Infants under 2 <input className={`${input} w-14`} type="number" min={0} max={8} value={infants} onChange={(e) => setInfants(+e.target.value)} /></label>
         <input className={`${input} w-32`} type="number" min={1} placeholder="Budget (BHD)" value={budget} onChange={(e) => setBudget(e.target.value)} />
       </div>
       <div className="space-y-1">

@@ -9,6 +9,6 @@ export interface PriceProvider {
   name: string;
   searchFlights(
     origin: string, dest: string, dates: { depart: string; return?: string },
-    travellers: { adults: number; children: number },
+    travellers: { adults: number; children: number; infants?: number },
   ): Promise<PriceOffer[]>;
 }

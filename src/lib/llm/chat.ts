@@ -19,7 +19,7 @@ export async function chat(tripId: string, message: string, mode: string, instru
   const offers = flights.legs.flatMap((l) => l.offers.slice(0, 3));
   const output = await callJson(ChatOutput, [
     { role: "system", content: SYSTEM },
-    { role: "system", content: JSON.stringify({ profile, trip: dto, mode, flightOffers: offers, budget: dto.totals, instruction }) },
+    { role: "system", content: JSON.stringify({ profile, trip: dto, mode, flightOffers: offers, budget: dto.totals, flightEstimates: flights.legs.map((l) => ({ ...l, offers: undefined })), instruction }) },
     ...history.reverse().map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
     { role: "user", content: message },
   ]);

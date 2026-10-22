@@ -4,6 +4,7 @@ import { PrefCandidate } from "../patch/schema";
 const DateText = z.string().refine(isDate, "Use YYYY-MM-DD").nullable();
 export const DraftStop = z.object({ city: z.string().min(1).max(80), country: z.string().min(1).max(80), airport: z.string().regex(/^[A-Z]{3}$/).nullable(), localCurrency: z.string().regex(/^[A-Z]{3}$/), nights: z.number().int().min(1).max(30), transport: z.enum(["flight", "train", "bus", "car"]).nullable() });
 export const DraftFields = z.object({
+  infants: z.number().int().min(0).max(8).optional(),
   destination: z.string().max(100).nullable(), originAirport: z.string().regex(/^[A-Z]{3}$/), adults: z.number().int().min(1).max(9), children: z.number().int().min(0).max(8), childAges: z.array(z.number().int().min(0).max(17)).max(8),
   lengthDays: z.number().int().min(2).max(61).nullable(), earliest: DateText, latest: DateText, startDate: DateText, endDate: DateText, dateReason: z.string().max(500),
   budgetAmount: z.number().positive().nullable(), budgetCurrency: z.string().regex(/^[A-Z]{3}$/), interests: z.string().max(500), food: z.string().max(300), pace: z.enum(["relaxed", "balanced", "packed"]), firstVisit: z.boolean(), notes: z.string().max(1000),

@@ -10,7 +10,8 @@ export default function ItemEditor({ item, defaultCurrency, onClose, onSaved }: 
   const [start, setStart] = useState(item.start ?? "");
   const [end, setEnd] = useState(item.end ?? "");
   const [notes, setNotes] = useState(item.notes ?? "");
-  const [amount, setAmount] = useState(item.priceSource === "entered" ? String(item.price ?? "") : "");
+  const [amount, setAmount] = useState(String(item.price ?? ""));
+  const [priceEdited, setPriceEdited] = useState(false);
   const [ccy, setCcy] = useState(item.currency ?? defaultCurrency);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
@@ -22,7 +23,7 @@ export default function ItemEditor({ item, defaultCurrency, onClose, onSaved }: 
     const body: Record<string, unknown> = { notes: notes || null };
     if (!booked) {
       Object.assign(body, { title, start: start || null, end: end || null });
-      if (amount !== "") body.entered = { amount: Number(amount), currency: ccy };
+      if (priceEdited && amount !== "") body.entered = { amount: Number(amount), currency: ccy };
     }
     try {
       const r = await fetch(`/api/items/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -45,8 +46,8 @@ export default function ItemEditor({ item, defaultCurrency, onClose, onSaved }: 
           <fieldset className="rounded border p-2">
             <legend className="px-1 text-xs text-slate-600">Real price (overrides the estimate; saved as “Entered”)</legend>
             <div className="flex gap-2">
-              <input className={f} type="number" min={0} step="0.01" placeholder="Total for the party" value={amount} onChange={(e) => setAmount(e.target.value)} />
-              <input className={`${f} w-20`} maxLength={3} value={ccy} onChange={(e) => setCcy(e.target.value.toUpperCase())} />
+              <input className={f} type="number" min={0} step="0.01" placeholder="Total for the party" value={amount} onChange={(e) => { setAmount(e.target.value); setPriceEdited(true); }} />
+              <input className={`${f} w-20`} maxLength={3} value={ccy} onChange={(e) => { setCcy(e.target.value.toUpperCase()); setPriceEdited(true); }} />
             </div>
           </fieldset>
         )}

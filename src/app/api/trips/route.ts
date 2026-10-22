@@ -12,6 +12,7 @@ const Create = z.object({
   title: z.string().min(1).max(120), originAirport: Iata, startDate: z.string().refine(isDate, "YYYY-MM-DD"),
   endDate: z.string().refine(isDate, "YYYY-MM-DD").optional(),
   adults: z.number().int().min(1).max(9), children: z.number().int().min(0).max(9),
+  infants: z.number().int().min(0).max(8).optional(),
   budgetAmount: z.number().positive().nullish(), budgetCurrency: Ccy.optional(),
   stops: z.array(z.object({
     city: z.string().min(1).max(80), country: z.string().min(1).max(80), airport: Iata.nullish(),
