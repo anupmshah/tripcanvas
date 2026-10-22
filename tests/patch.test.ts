@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ChatOutput, NewItem, PatchOp, Time } from "../src/lib/patch/schema";
 import { annotateOps, offerFits, type PState } from "../src/lib/patch/plan";
 import { retryConflict } from "../src/lib/db";
+import { jsonCorrections } from "../src/lib/llm/openai";
 
 const state: PState = {
   startDate: "2027-03-01",
@@ -10,6 +11,11 @@ const state: PState = {
 };
 const item = { type: "food" as const, title: "Dinner", placeQuery: null, start: null, end: null, notes: null, estimate: { low: 10, mid: 20, high: 30, currency: "EUR" }, offerId: null };
 describe("patch validation and booked protection", () => {
+  it("includes every missing item field in the model correction, beyond eight errors", () => {
+    const r = ChatOutput.safeParse({ reply: "ok", preferenceCandidates: [], patch: { ops: Array.from({ length: 30 }, () => ({ op: "add", dayIndex: 0, position: null, item: { ...item, notes: undefined } })) } });
+    expect(r.success).toBe(false);
+    if (!r.success) expect(jsonCorrections(r.error)).toContain("patch.ops.29.item.notes");
+  });
   it("retries serialization conflicts but propagates unrelated errors", async () => {
     let attempts = 0;
     expect(await retryConflict(async () => { if (++attempts < 3) throw { code: "P2034" }; return "saved"; })).toBe("saved");
