@@ -23,7 +23,7 @@ assert(dto.days.slice(0, -1).every((day) => day.items.some((i) => i.type === "ac
 const food = items(dto).filter((i) => i.type === "food");
 assert(food.length > 0 && food.every((i) => /vegetarian|vegan/i.test(`${i.title} ${i.notes}`)), "vegetarian food items throughout");
 assert(items(dto).filter((i) => i.price != null).every((i) => ["estimate", "live", "entered"].includes(i.priceSource) && i.label), "all priced items labelled");
-assert(items(dto).every((i) => ["ok", "unresolved", "pending"].includes(i.geoStatus)) && items(dto).some((i) => i.geoStatus === "ok"), "all places checked or visibly flagged; verified places present");
+assert(items(dto).every((i) => ["ok", "wikipedia", "wikivoyage", "unresolved", "pending"].includes(i.geoStatus)) && items(dto).some((i) => i.geoStatus === "ok"), "all places checked or visibly flagged; verified places present");
 assert(items(dto).some((i) => i.type === "flight") && dto.stops.every((s) => dto.days.filter((day) => day.stopId === s.id).some((day) => day.items.some((i) => i.type === "stay"))), "flights and stays generated across route");
 const history = (await j(`/api/trips/${r.data.id}/chat`)).data;
 assert(history.preferenceCandidates.some((p) => p.field === "food" && /vegetarian/i.test(p.value)), "preference confirmation survives redirect to editor");

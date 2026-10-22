@@ -13,10 +13,10 @@ async function getJson(url: string) {
   return r.json();
 }
 
-export async function getPlaceInfo(title: string, source: "wikipedia" | "wikivoyage"): Promise<PlaceInfo> {
+export async function getPlaceInfo(title: string, source: "wikipedia" | "wikivoyage", force = false): Promise<PlaceInfo> {
   const key = `${source}:en:${title.trim().toLowerCase()}`;
   const hit = await prisma.placeInfoCache.findUnique({ where: { key } });
-  if (hit && Date.now() - hit.fetchedAt.getTime() < TTL)
+  if (hit && (hit.found || !force) && Date.now() - hit.fetchedAt.getTime() < TTL)
     return { found: hit.found, title: hit.title ?? undefined, extract: hit.extract ?? undefined, url: hit.url ?? undefined, thumbnailUrl: hit.thumbnailUrl ?? undefined, source, fetchedAt: hit.fetchedAt.toISOString() };
 
   const host = source === "wikipedia" ? "en.wikipedia.org" : "en.wikivoyage.org";

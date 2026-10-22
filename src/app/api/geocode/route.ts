@@ -10,5 +10,5 @@ export async function GET(req: Request) {
   const stopId = u.searchParams.get("stopId"), tripId = u.searchParams.get("tripId");
   const stop = stopId ? await prisma.stop.findUnique({ where: { id: stopId } })
     : tripId ? await prisma.stop.findFirst({ where: { tripId }, orderBy: { order: "asc" } }) : null;
-  return json(await geocode(q, { near: stop?.lat != null ? { lat: stop.lat, lng: stop.lng! } : null, countryCode: stop?.countryCode }));
+  return json(await geocode(q, { near: stop?.lat != null ? { lat: stop.lat, lng: stop.lng! } : null, countryCode: stop?.countryCode, city: stop?.city, country: stop?.country }));
 }

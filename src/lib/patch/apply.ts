@@ -51,7 +51,7 @@ export async function persistState(tx: Db, tripId: string, S: PState) {
 }
 
 export function newItemData({ item, geo, offer }: AddPayload) {
-  const geoData = geo?.found ? { lat: geo.lat, lng: geo.lng, geoStatus: "ok" } : { geoStatus: geo?.unavailable || !geo ? "pending" : "unresolved" };
+  const geoData = geo?.found ? { lat: geo.lat, lng: geo.lng, geoStatus: geo.source ?? "ok" } : { geoStatus: geo?.unavailable || !geo ? "pending" : "unresolved" };
   const base = { type: item.type, title: item.title, placeQuery: item.placeQuery, start: item.start, end: item.end, notes: item.notes, ...geoData };
   if (offer && offer.price != null)
     return { ...base, price: offer.price, currency: offer.currency, priceSource: "live", priceFetchedAt: new Date(offer.fetchedAt), provider: offer.provider, offerId: offer.offerId, sourceUrl: offer.deepLink };

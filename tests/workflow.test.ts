@@ -2,6 +2,17 @@ import { expect, it } from "vitest";
 import { TripDraft, FromTextInput, blockingQuestions, resolveDraftDates } from "../src/lib/llm/draft";
 import { linksForItem, airlineSite } from "../src/lib/links/deeplinks";
 import { makeIcs } from "../src/lib/export/ics";
+import { verificationQueries, wikiMatches, locationVerified, canReadGeoCache } from "../src/lib/geo/queries";
+it("tries a complete place query before the bounded name and accepts only a relevant wiki match", () => {
+  expect(verificationQueries("Magic Kingdom Park", { city: "Orlando", country: "USA" })).toEqual(["Magic Kingdom Park, Orlando, USA", "Magic Kingdom Park"]);
+  expect(verificationQueries("Torre de Belém, Lisbon", { city: "Porto", country: "Portugal" })[0]).toBe("Torre de Belém, Lisbon");
+  expect(wikiMatches("Universal's Islands of Adventure, Orlando, USA", "Islands of Adventure", "A theme park in Orlando")).toBe(true);
+  expect(wikiMatches("Imaginary restaurant 9z71q", "New York City", "A city in the USA")).toBe(false);
+  expect(locationVerified("wikipedia")).toBe(true); expect(locationVerified("pending")).toBe(false);
+  const hit = { found: false, fetchedAt: new Date() };
+  expect(canReadGeoCache(hit)).toBe(true); expect(canReadGeoCache(hit, true)).toBe(false);
+  expect(canReadGeoCache({ ...hit, found: true }, true)).toBe(true);
+});
 const draft = {
   destination: "USA", originAirport: "BAH", adults: 2, children: 1, childAges: [], lengthDays: 15,
   earliest: "2026-12-15", latest: "2027-01-05", startDate: "2026-12-16", endDate: "2026-12-30", dateReason: "Fits the window; prices have not been checked.",

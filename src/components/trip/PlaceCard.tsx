@@ -27,7 +27,7 @@ export default function PlaceCard({ item, city, onClose }: { item: ItemDTO; city
     <aside className="fixed right-0 top-0 z-[1000] h-full w-96 overflow-auto border-l bg-white p-4 shadow-xl" role="dialog" aria-label="Place details">
       <button onClick={onClose} className="float-right text-slate-500" aria-label="Close">✕</button>
       <h2 className="text-lg font-semibold">{item.title}</h2>
-      <p className="text-xs text-slate-500">{city}{item.geoStatus === "ok" ? " · location verified on OpenStreetMap" : ""}</p>
+      <p className="text-xs text-slate-500">{city}{item.geoStatus === "ok" ? " · location verified on OpenStreetMap" : ["wikipedia", "wikivoyage"].includes(item.geoStatus) ? ` · verified via ${item.geoStatus}` : ""}</p>
       {info === null && <p className="mt-3 animate-pulse text-sm text-slate-500">Loading from Wikipedia…</p>}
       {info === "error" && <p className="mt-3 text-sm text-slate-500">Info unavailable right now.</p>}
       {info && info !== "error" && !info.found && <p className="mt-3 text-sm text-slate-500">No Wikipedia article found for this place.</p>}

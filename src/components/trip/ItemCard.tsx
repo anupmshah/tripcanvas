@@ -21,7 +21,8 @@ export default function ItemCard({ item, pin, color, selected, onDetails, onEdit
         {booked
           ? <span className="rounded bg-emerald-100 px-1.5 py-0.5 font-medium text-emerald-800">Booked{item.bookingRef ? ` · ref ${item.bookingRef}` : ""}</span>
           : <span className="rounded bg-sky-100 px-1.5 py-0.5 font-medium text-sky-800">Proposed</span>}
-        {item.geoStatus === "unresolved" && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-800" title="No match on OpenStreetMap near this city">⚠ Location not verified on OSM</span>}
+        {["unresolved", "pending"].includes(item.geoStatus) && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-800" title="No matching OSM or wiki source yet">⚠ Location not verified</span>}
+        {["wikipedia", "wikivoyage"].includes(item.geoStatus) && <span>Verified via {item.geoStatus}</span>}
         {(item.start || item.end) && <span className="text-slate-500">{item.start}{item.end ? `–${item.end}` : ""}</span>}
       </div>
       {item.notes && <p className="mt-1 text-xs text-slate-600">{item.notes}</p>}

@@ -22,7 +22,7 @@ Open http://localhost:3000. If another local service owns IPv4 port 3000, use `n
 
 Start with: “Plan a USA trip for 2 adults and 1 kid for 15 days anytime between 15th December till 5th January. This is a first time to the USA and we are vegetarians.” Review dates, airports, party, budget and route; edit fields or type a revision. Only missing destination, duration or usable dates block creation. Home airport defaults from the profile. Manual creation remains available.
 
-Accepting the route creates the trip and generates flights, stays, one activity per full day and vegetarian food choices. Locations are checked or visibly flagged. Generation failures preserve the trip and original request for retry. Stable preferences save only after confirmation.
+Accepting the route creates the trip and generates flights, stays, one activity per full day and vegetarian food choices. Locations try Nominatim by full name/city/country, then a bounded name search, then a relevant Wikipedia/Wikivoyage article. Flags remain only when no source resolves. Flagged items have Verify again (bypasses negative caches); Nominatim remains cached and throttled to one request/second. Wiki-only matches have no invented map coordinates. Generation failures preserve the trip and original request for retry. Stable preferences save only after confirmation.
 
 Open the Lisbon → Porto demo for a populated example. Chat shows a diff with accept/reject. Drag proposed items between days, edit prices, and mark an item booked with its final price/reference. Booking happens on external sites. Pasting a confirmation only prefills the booking form; review it before saving. Booked items allow notes, but cannot be moved to another day or deleted.
 

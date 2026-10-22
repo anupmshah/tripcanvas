@@ -12,6 +12,8 @@ import PriceLabel from "./PriceLabel";
 import FlightOffers from "./FlightOffers";
 import BookingLinks from "./BookingLinks";
 import MarkBookedDialog from "./MarkBookedDialog";
+import VerifyAgain from "./VerifyAgain";
+import { locationVerified } from "@/lib/geo/queries";
 import TripActions from "./TripActions";
 import type { Weather } from "./shared";
 
@@ -63,7 +65,7 @@ export default function TripWorkspace({ initial, initialWarning = "" }: { initia
         <FlightOffers dto={dto} reload={reload} />
         {msg && <div className="rounded bg-red-50 p-2 text-sm text-red-700" role="alert">{msg}</div>}
         <DayColumns dto={dto} setDto={setDto} reload={reload} weather={weather} toast={toast} selected={selected}
-          onDetails={setDetails} onEdit={setEditing} onDelete={del} renderExtra={(i) => <><PriceLabel item={i} displayCurrency={dto.totals.displayCurrency} /><BookingLinks item={i} />{i.status !== "booked" && <button onClick={() => setBooking(i)} className="text-xs text-emerald-700 underline">Mark as booked</button>}</>} />
+          onDetails={setDetails} onEdit={setEditing} onDelete={del} renderExtra={(i) => <><PriceLabel item={i} displayCurrency={dto.totals.displayCurrency} /><BookingLinks item={i} />{!locationVerified(i.geoStatus) && <VerifyAgain id={i.id} reload={reload} />}{i.status !== "booked" && <button onClick={() => setBooking(i)} className="text-xs text-emerald-700 underline">Mark as booked</button>}</>} />
       </section>
       <aside className="w-[28rem] shrink-0 space-y-3 overflow-y-auto border-l bg-white p-3">
         <MapPanel dto={dto} onSelect={setSelected} />
