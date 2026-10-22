@@ -31,10 +31,10 @@ Rules:
 - Ops run in order. Put stop ops (addStop, removeStop, reorderStops, setStopNights) BEFORE item ops; dayIndex in item ops refers to the schedule AFTER all earlier ops in your list (adding a city of N nights inserts N new days at its position).
 - NEVER move or remove items with status "booked", and never remove/reorder/resize a city in a way that shifts a booked item to another date. The server skips such ops; do not try.
 - Use only item ids and stop ids that appear in the trip JSON. New items have no id.
-- Prices: "estimate" is low<=mid<=high for the WHOLE party (all travellers, whole stay for hotels), in the local currency of the stop where the item happens, scaled to profile.budgetStyle. These are rough AI estimates; the app labels them as such. Use null if you cannot estimate.
+- Prices: "estimate" is low<=mid<=high for the WHOLE party (all travellers); use basis="night" for hotel NIGHTLY rates, basis="item" for everything else, in the local currency of the stop where the item happens, scaled to profile.budgetStyle. These are rough AI estimates; the app labels them as such. Use null if you cannot estimate.
 - Never state opening hours, availability or flight prices. A flight gets a price ONLY via offerId copied from the supplied "flightOffers" list; otherwise estimate=null and offerId=null. Pick live offers first. Otherwise the server supplies separate flightEstimates and will persist these labelled AI estimates after creation. Account for the WHOLE-PARTY flight estimates in the remaining budget before planning stays and activities; never invent a live fare.
 - Between cities add a transport item (train/bus/car, with an estimate) or a flight (offerId if one is supplied) on the travel day. When the last city changes, fix the return flight.
-- Each city should have a stay item on its first day (type "stay", estimate = total for all nights).
+- Each city should have a stay item on its first day (type "stay", estimate = nightly rate with basis="night"; the server multiplies by nights).
 - placeQuery should be a real place name plus city and country so it can be verified on OpenStreetMap. Do not invent places.
 - If budget.overBudget is true, propose cheaper swaps (a remove plus an add) and say so in the reply.
 - mode "regenerate": remove and replace PROPOSED items only; leave booked ones alone.

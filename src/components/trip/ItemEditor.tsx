@@ -6,11 +6,12 @@ const f = "w-full rounded border border-slate-300 px-2 py-1 text-sm";
 
 export default function ItemEditor({ item, defaultCurrency, onClose, onSaved }: { item: ItemDTO; defaultCurrency: string; onClose: () => void; onSaved: () => void }) {
   const booked = item.status === "booked";
+  const nights = item.type === "stay" ? item.stayNights ?? 1 : 1;
   const [title, setTitle] = useState(item.title);
   const [start, setStart] = useState(item.start ?? "");
   const [end, setEnd] = useState(item.end ?? "");
   const [notes, setNotes] = useState(item.notes ?? "");
-  const [amount, setAmount] = useState(String(item.price ?? ""));
+  const [amount, setAmount] = useState(item.price == null ? "" : String(Number((item.price / nights).toFixed(3))));
   const [priceEdited, setPriceEdited] = useState(false);
   const [ccy, setCcy] = useState(item.currency ?? defaultCurrency);
   const [err, setErr] = useState("");
@@ -23,7 +24,7 @@ export default function ItemEditor({ item, defaultCurrency, onClose, onSaved }: 
     const body: Record<string, unknown> = { notes: notes || null };
     if (!booked) {
       Object.assign(body, { title, start: start || null, end: end || null });
-      if (priceEdited && amount !== "") body.entered = { amount: Number(amount), currency: ccy };
+      if (priceEdited && amount !== "") body.entered = { amount: Number(amount) * nights, currency: ccy };
     }
     try {
       const r = await fetch(`/api/items/${item.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -44,9 +45,9 @@ export default function ItemEditor({ item, defaultCurrency, onClose, onSaved }: 
         <label className="block text-sm">Notes<textarea className={f} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} /></label>
         {!booked && (
           <fieldset className="rounded border p-2">
-            <legend className="px-1 text-xs text-slate-600">Real price (overrides the estimate; saved as “Entered”)</legend>
+            <legend className="px-1 text-xs text-slate-600">{item.type === "stay" ? `Nightly rate × ${nights} nights (saved as Entered total)` : "Price for the party (editing saves Entered)"}</legend>
             <div className="flex gap-2">
-              <input className={f} type="number" min={0} step="0.01" placeholder="Total for the party" value={amount} onChange={(e) => { setAmount(e.target.value); setPriceEdited(true); }} />
+              <input className={f} type="number" min={0} step="0.001" placeholder={item.type === "stay" ? "Nightly rate for the party" : "Total for the party"} value={amount} onChange={(e) => { setAmount(e.target.value); setPriceEdited(true); }} />
               <input className={`${f} w-20`} maxLength={3} value={ccy} onChange={(e) => { setCcy(e.target.value.toUpperCase()); setPriceEdited(true); }} />
             </div>
           </fieldset>

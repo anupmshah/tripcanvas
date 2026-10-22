@@ -20,7 +20,7 @@ export default function DiffModal({ patch, dto, onDone }: { patch: Proposal; dto
     <h2 className="text-lg font-bold">Review proposed changes</h2><p className="text-xs text-slate-600">Your itinerary changes only when you accept. Booked items stay locked.</p>
     {patch.ops.map((o, i) => <div key={i} className={`rounded border p-2 text-sm ${o.status === "skipped" ? "bg-slate-100 text-slate-500" : o.op === "remove" ? "bg-red-50" : "bg-emerald-50"}`}>
       <strong>{o.op}</strong>{"itemId" in o && ` · ${itemName(o.itemId)}`}
-      {o.op === "add" && <> · {o.item.title} → Day {o.dayIndex + 1}{o.item.estimate && <div>Estimate: {o.item.estimate.low}–{o.item.estimate.high} {o.item.estimate.currency}</div>}<div>{o.geo?.found ? `Verified via ${o.geo.source ?? "OpenStreetMap"}` : "Location not verified"}</div></>}
+      {o.op === "add" && <> · {o.item.title} → Day {o.dayIndex + 1}{o.item.estimate && <div>Estimate: {o.item.estimate.low}–{o.item.estimate.high} {o.item.estimate.currency}{o.item.estimate.basis === "night" ? "/night; total uses the route nights" : ""}</div>}<div>{o.geo?.found ? `Verified via ${o.geo.source ?? "OpenStreetMap"}` : "Location not verified"}</div></>}
       {o.op === "move" && ` · Day ${(dto.days.find((d) => d.items.some((x) => x.id === o.itemId))?.index ?? 0) + 1} → Day ${o.toDayIndex + 1}`}
       {o.op === "addStop" && ` · ${o.city}, ${o.country} · ${o.nights} nights`}
       {o.op === "setStopNights" && ` · ${dto.stops.find((s) => s.id === o.stopId)?.city} → ${o.nights} nights`}

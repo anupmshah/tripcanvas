@@ -6,6 +6,7 @@ import { priceLabel } from "./money/priceLabel";
 import { convert } from "./money/currency";
 import { linksForItem } from "./links/deeplinks";
 import { ensureFlightPrices } from "./price/estimate";
+import { nightsRemaining } from "./money/totals";
 
 export type ItemDTO = Omit<Item, "createdAt" | "updatedAt" | "priceFetchedAt"> & { priceFetchedAt: string | null; links: { label: string; url: string }[]; label: ReturnType<typeof priceLabel>; displayPrice?: number | null };
 export type DayDTO = { id: string; index: number; date: string; stopId: string; items: ItemDTO[] };
@@ -28,6 +29,10 @@ export async function getTripDTO(id: string, db: Db = prisma): Promise<TripDTO |
     include: { stops: { orderBy: { order: "asc" } }, days: { orderBy: { index: "asc" }, include: { items: { orderBy: { order: "asc" } } } } },
   });
   if (!t) return null;
+  for (const d of t.days) for (const i of d.items) if (i.type === "stay" && i.stayNights == null) {
+    i.stayNights = nightsRemaining(d.date, t.stops.find((s) => s.id === d.stopId)!.endDate);
+    await db.item.updateMany({ where: { id: i.id, stayNights: null }, data: { stayNights: i.stayNights } });
+  }
   if (db === prisma) await ensureFlightPrices(t);
   const { stops, days, createdAt: _c, updatedAt: _u, ...trip } = t;
   const [rates, profile] = await Promise.all([getRates(), db.profile.findUnique({ where: { id: "default" } })]);

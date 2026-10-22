@@ -91,6 +91,7 @@ model Item {
   notes          String?
   status         String    @default("proposed")
   price          Float?
+  stayNights     Int?
   priceLow       Float?
   priceHigh      Float?
   currency       String?

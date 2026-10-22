@@ -1,3 +1,4 @@
+import { nightsRemaining, resizeStay } from "@/lib/money/totals";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { body, err, json } from "@/lib/http";
@@ -12,7 +13,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const [d, bad] = await body(req, Layout);
   if (bad) return bad;
   try { return await prisma.$transaction(async (tx) => {
-  const [items, days] = await Promise.all([tx.item.findMany({ where: { tripId } }), tx.day.findMany({ where: { tripId } })]);
+  const [items, days] = await Promise.all([tx.item.findMany({ where: { tripId } }), tx.day.findMany({ where: { tripId }, include: { stop: true } })]);
   const byId = new Map(items.map((i) => [i.id, i]));
   const dayIds = new Set(days.map((x) => x.id));
   const seen = new Set<string>();
@@ -25,7 +26,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       if (it.status === "booked" && it.dayId !== col.dayId) return err(409, `"${it.title}" is booked and cannot move to another day`);
     }
   }
-  for (const col of d.days) for (const [order, id] of col.itemIds.entries()) await tx.item.update({ where: { id }, data: { dayId: col.dayId, order, ...invalidateQuote(byId.get(id)!, byId.get(id)!.dayId !== col.dayId) } });
+  for (const col of d.days) for (const [order, id] of col.itemIds.entries()) await tx.item.update({ where: { id }, data: { dayId: col.dayId, order, ...invalidateQuote(byId.get(id)!, byId.get(id)!.dayId !== col.dayId), ...resizeStay(byId.get(id)!, nightsRemaining(days.find((d) => d.id === col.dayId)!.date, days.find((d) => d.id === col.dayId)!.stop.endDate)) } });
   return json({ ok: true });
   }, { isolationLevel: "Serializable", timeout: 30_000 }); } catch (e) {
     if ((e as { code?: string }).code === "P2034") return err(409, "Trip changed while moving. Reload and retry.");

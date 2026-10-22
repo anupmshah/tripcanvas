@@ -2,8 +2,19 @@ import { describe, expect, it } from "vitest";
 import { convert, formatMoney } from "../src/lib/money/currency";
 import { computeTotals } from "../src/lib/money/totals";
 import { FlightEstimate, flightPartyPrice } from "../src/lib/money/flight";
+import { stayEstimate, resizeStay } from "../src/lib/money/totals";
 const rates = { base: "USD" as const, rateDate: "2027-03-01", rates: { USD: 1, EUR: 0.9, BHD: 0.376 } };
 describe("currency and honest totals", () => {
+  it("prices nightly stays, spreads nights without double counting, and keeps empty days at zero", () => {
+    const p = stayEstimate({ low: 30, mid: 45, high: 60, currency: "BHD", basis: "night" }, 3);
+    expect(p).toEqual({ price: 135, priceLow: 90, priceHigh: 180, currency: "BHD" });
+    const dto = { trip: { budgetAmount: null, budgetCurrency: "BHD" }, stops: [{ id: "s", city: "Porto", endDate: "2027-03-04" }], days: Array.from({ length: 4 }, (_, index) => ({ index, date: `2027-03-0${index + 1}`, stopId: "s", items: index === 0 ? [{ ...p, type: "stay", stayNights: 3, priceSource: "estimate" }] : [] })) };
+    const t = computeTotals(dto, rates, "BHD");
+    expect(t.perDay.map((d) => d.amount)).toEqual([45, 45, 45, 0]);
+    expect(t.total).toBe(135); expect(t.perCity[0].amount).toBe(135); expect(t.estimate.mid).toBe(135);
+    expect(resizeStay({ ...p, type: "stay", status: "proposed", stayNights: 3 }, 2)).toMatchObject({ price: 90, stayNights: 2 });
+    expect(resizeStay({ ...p, type: "stay", status: "booked", stayNights: 3 }, 2)).toEqual({});
+  });
   it("multiplies USD flight ranges by adults, children and infants before FX and totals", () => {
     const estimate = FlightEstimate.parse({ currency: "USD", adult: { low: 100, mid: 200, high: 300 }, child: { low: 50, mid: 100, high: 150 }, infant: { low: 10, mid: 20, high: 30 } });
     const p = flightPartyPrice(estimate, { adults: 2, children: 1, infants: 1 });

@@ -26,7 +26,7 @@ Accepting the route creates the trip and generates flights, stays, one activity 
 
 Open the Lisbon → Porto demo for a populated example. Chat shows a diff with accept/reject. Drag proposed items between days, edit prices, and mark an item booked with its final price/reference. Booking happens on external sites. Pasting a confirmation only prefills the booking form; review it before saving. Booked items allow notes, but cannot be moved to another day or deleted.
 
-Costs retain their original currency, source and timestamp. Display conversion uses cached daily FX rates. Live fares older than 30 minutes are flagged on reload. Budget totals exclude unpriced items and unplanned expenses; rates unavailable means a partial converted total. All estimates need checking with the provider.
+Costs retain their original currency, source and timestamp. Display conversion uses cached daily FX rates. Live fares older than 30 minutes are flagged on reload. Budget totals exclude unpriced items and unplanned expenses; rates unavailable means a partial converted total. All estimates need checking with the provider. Stay prices are saved as full-stay totals: nightly rate × nights. Cards show that calculation; the daily chart spreads the total evenly across occupied nights without counting it twice in city totals. Editing a stay price accepts the nightly rate; booking accepts the final total paid. Empty days show zero.
 
 Share creates a read-only presentation without booking references or chat. Notes are included: review them before sharing. This is a trusted single-user app without authentication; sharing is not an access-control boundary. Calendar exports use local floating times, without timezone IDs. PDF export opens the browser print dialog; choose Save as PDF.
 

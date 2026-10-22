@@ -1,3 +1,4 @@
+import { nightsRemaining } from "@/lib/money/totals";
 import { z } from "zod";
 import { Time as TimeValue } from "@/lib/patch/schema";
 import { prisma } from "@/lib/db";
@@ -33,7 +34,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const geo = await verifyPlace(d.placeQuery || `${d.title}, ${day.stop.city}, ${day.stop.country}`, day.stop);
   const order = await prisma.item.count({ where: { dayId: day.id } });
   const item = await prisma.item.create({
-    data: { tripId, dayId: day.id, order, type: d.type, title: d.title, placeQuery: d.placeQuery ?? null, start: d.start ?? null, end: d.end ?? null, notes: d.notes ?? null, ...geo, ...priceData },
+    data: { tripId, dayId: day.id, order, type: d.type, stayNights: d.type === "stay" ? nightsRemaining(day.date, day.stop.endDate) : null, title: d.title, placeQuery: d.placeQuery ?? null, start: d.start ?? null, end: d.end ?? null, notes: d.notes ?? null, ...geo, ...priceData },
   });
   return json(toItemDTO(item), 201);
 }

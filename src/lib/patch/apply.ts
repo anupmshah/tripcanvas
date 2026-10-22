@@ -5,6 +5,7 @@ import { planDays, tripLabel } from "../stops";
 import type { AnnotatedOp } from "./schema";
 import { annotateOps, stateFromDTO, offerFits, type AddPayload, type PState } from "./plan";
 import { invalidateQuote } from "../price/invalidate";
+import { nightsRemaining, resizeStay, stayEstimate } from "../money/totals";
 
 /** Write a planned state to the DB: stops, days (contiguous), item order; new items from `add` payloads. */
 export async function persistState(tx: Db, tripId: string, S: PState) {
@@ -35,14 +36,15 @@ export async function persistState(tx: Db, tripId: string, S: PState) {
     else await tx.day.create({ data: { id: d.id, tripId, ...data } });
     for (const [order, it] of d.items.entries()) {
       const cur = dbItem.get(it.id);
+      const nights = nightsRemaining(data.date, plan.ranges[S.stops.findIndex((s) => s.id === d.stopId)].endDate);
       if (cur && it.status !== "booked") {
         const old = days.find((x) => x.id === cur.dayId);
         const changed = cur.dayId !== d.id || old?.date !== data.date || old?.stopId !== d.stopId || (cur.type === "flight" && routeChanged);
-        if (changed || cur.order !== order) await tx.item.update({ where: { id: it.id }, data: { dayId: d.id, order, ...invalidateQuote(cur, changed) } });
+        if (changed || cur.order !== order || (cur.type === "stay" && cur.stayNights !== nights)) await tx.item.update({ where: { id: it.id }, data: { dayId: d.id, order, ...invalidateQuote(cur, changed), ...resizeStay(cur, nights) } });
       }
       else if (it.add) {
         const add = { ...it.add, offer: it.add.offer && offerFits(S, index, it.add.offer) ? it.add.offer : undefined };
-        await tx.item.create({ data: { id: it.id, tripId, dayId: d.id, order, ...newItemData(add) } });
+        await tx.item.create({ data: { id: it.id, tripId, dayId: d.id, order, ...newItemData(add, nights) } });
       }
     }
   }
@@ -50,13 +52,13 @@ export async function persistState(tx: Db, tripId: string, S: PState) {
   await tx.trip.update({ where: { id: tripId }, data: { endDate: plan.endDate, destination: tripLabel(S.stops) } });
 }
 
-export function newItemData({ item, geo, offer }: AddPayload) {
+export function newItemData({ item, geo, offer }: AddPayload, nights = 1) {
   const geoData = geo?.found ? { lat: geo.lat, lng: geo.lng, geoStatus: geo.source ?? "ok" } : { geoStatus: geo?.unavailable || !geo ? "pending" : "unresolved" };
-  const base = { type: item.type, title: item.title, placeQuery: item.placeQuery, start: item.start, end: item.end, notes: item.notes, ...geoData };
+  const base = { type: item.type, title: item.title, placeQuery: item.placeQuery, start: item.start, end: item.end, notes: item.notes, stayNights: item.type === "stay" ? nights : null, ...geoData };
   if (offer && offer.price != null)
     return { ...base, price: offer.price, currency: offer.currency, priceSource: "live", priceFetchedAt: new Date(offer.fetchedAt), provider: offer.provider, offerId: offer.offerId, sourceUrl: offer.deepLink };
   if (item.estimate) // every LLM number is an estimate; the LLM can never set live/entered
-    return { ...base, price: item.estimate.mid, priceLow: item.estimate.low, priceHigh: item.estimate.high, currency: item.estimate.currency.toUpperCase(), priceSource: "estimate", provider: "llm", priceFetchedAt: new Date() };
+    return { ...base, ...stayEstimate(item.estimate, item.type === "stay" ? nights : 1), priceSource: "estimate", provider: "llm", priceFetchedAt: new Date() };
   return base;
 }
 
