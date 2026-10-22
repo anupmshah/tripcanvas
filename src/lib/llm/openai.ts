@@ -5,23 +5,19 @@ import { env } from "../env";
 
 export class LlmInvalidOutput extends Error {}
 export class LlmUnavailable extends Error {}
-export type ChatMsg = { role: "system" | "user" | "assistant"; content: string };
+type ChatMsg = { role: "system" | "user" | "assistant"; content: string };
 
 let client: OpenAI | null = null;
 export function jsonCorrections(error: ZodError) {
   return error.issues.map((i) => `${i.path.join(".") || "(root)"}: ${i.message}`).join("; ");
 }
 /** Calls the model in JSON mode, validates with Zod, and retries with the validation errors fed back. */
-export async function callJson<T>(
-  schema: ZodType<T>,
-  messages: ChatMsg[],
-  opts: { maxAttempts?: number } = {},
-): Promise<T> {
+export async function callJson<T>(schema: ZodType<T>, messages: ChatMsg[]): Promise<T> {
   if (!env.OPENAI_API_KEY) throw new LlmUnavailable("OPENAI_API_KEY is not set");
   client ??= new OpenAI({ apiKey: env.OPENAI_API_KEY, timeout: 90_000, maxRetries: 1 });
   const msgs = [...messages];
   let lastProblem = "";
-  for (let attempt = 1; attempt <= (opts.maxAttempts ?? 3); attempt++) {
+  for (let attempt = 1; attempt <= 3; attempt++) {
     let text = "";
     try {
       const r = await client.chat.completions.create({

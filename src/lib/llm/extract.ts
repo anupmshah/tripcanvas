@@ -1,7 +1,8 @@
 import "server-only";
 import { z } from "zod";
 import { callJson } from "./openai";
-export const Confirmation = z.object({
+import { Time } from "../patch/schema";
+const Confirmation = z.object({
   bookingRef: z.string().max(100).nullable(),
   price: z.number().nonnegative().nullable(),
   currency: z
@@ -12,14 +13,8 @@ export const Confirmation = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .nullable(),
-  start: z
-    .string()
-    .regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/)
-    .nullable(),
-  end: z
-    .string()
-    .regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/)
-    .nullable(),
+  start: Time.nullable(),
+  end: Time.nullable(),
   notes: z.string().max(500).nullable(),
 });
 export async function extractConfirmation(text: string) {

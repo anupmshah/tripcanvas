@@ -2,7 +2,7 @@ import { z } from "zod";
 import { addDays, diffDays, isDate } from "../dates";
 import { PrefCandidate } from "../patch/schema";
 const DateText = z.string().refine(isDate, "Use YYYY-MM-DD").nullable();
-export const DraftStop = z.object({
+const DraftStop = z.object({
   city: z.string().min(1).max(80),
   country: z.string().min(1).max(80),
   airport: z

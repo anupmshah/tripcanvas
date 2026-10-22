@@ -8,7 +8,7 @@ import { invalidateQuote } from "../price/invalidate";
 import { nightsRemaining, resizeStay, stayEstimate } from "../money/totals";
 
 /** Write a planned state to the DB: stops, days (contiguous), item order; new items from `add` payloads. */
-export async function persistState(tx: Db, tripId: string, S: PState) {
+async function persistState(tx: Db, tripId: string, S: PState) {
   const plan = planDays(
     S.startDate,
     S.stops.map((s) => s.nights),
@@ -115,17 +115,13 @@ export async function persistState(tx: Db, tripId: string, S: PState) {
   });
 }
 
-export function newItemData({ item, geo, offer }: AddPayload, nights = 1) {
+function newItemData({ item, geo, offer }: AddPayload, nights = 1) {
+  const { estimate, offerId: _offerId, ...fields } = item;
   const geoData = geo?.found
     ? { lat: geo.lat, lng: geo.lng, geoStatus: geo.source ?? "ok" }
     : { geoStatus: geo?.unavailable || !geo ? "pending" : "unresolved" };
   const base = {
-    type: item.type,
-    title: item.title,
-    placeQuery: item.placeQuery,
-    start: item.start,
-    end: item.end,
-    notes: item.notes,
+    ...fields,
     stayNights: item.type === "stay" ? nights : null,
     ...geoData,
   };
@@ -140,11 +136,11 @@ export function newItemData({ item, geo, offer }: AddPayload, nights = 1) {
       offerId: offer.offerId,
       sourceUrl: offer.deepLink,
     };
-  if (item.estimate)
+  if (estimate)
     // every LLM number is an estimate; the LLM can never set live/entered
     return {
       ...base,
-      ...stayEstimate(item.estimate, item.type === "stay" ? nights : 1),
+      ...stayEstimate(estimate, item.type === "stay" ? nights : 1),
       priceSource: "estimate",
       provider: "llm",
       priceFetchedAt: new Date(),

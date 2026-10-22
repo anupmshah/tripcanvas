@@ -73,8 +73,8 @@ export default function PlaceCard({
       )}
       {info && info !== "error" && info.found && (
         <div className="mt-3 space-y-2 text-sm">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           {info.thumbnailUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
             <img src={info.thumbnailUrl} alt={info.title} className="w-full rounded" />
           )}
           <p>{info.extract}</p>

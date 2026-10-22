@@ -52,6 +52,23 @@ Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright
 
 - No real Duffel credentials were available. Test fares are explicitly labelled; live inventory/checkout is unverified.
 - AI route quality, estimates, hours and availability require review. Initial itineraries are compact and patches allow at most 60 operations; long trips may need follow-up chat.
-- Child flight searches use age 10 when ages are unknown. No payments, authentication, collaborative editing or deployment is included.
+- Child flight searches currently use age 10; extracted child ages can inform the plan and confirmed preferences but are not passed to Duffel. No payments, authentication, collaborative editing or deployment is included.
 - Share links have no expiry/revoke UI. Calendar times have no timezone conversion. PDF output uses browser printing, not a server PDF service.
 - Browser automation was unavailable in this environment. HTTP checks cover the workflows; native drag gestures, clipboard permissions and printed visual layout remain unverified.
+- npm reports 10 dependency audit findings (1 moderate, 9 high). Breaking upgrades were not applied to the pinned stack.
+
+## Formatting and size
+
+`npm run format` formats src, tests and scripts with Prettier at width 100. `npm run lint` first runs `format:check`. Count formatted non-blank lines, not packed source lines.
+
+After the four fixes, the trim reduced TS/TSX from 6,282 to 6,238 lines (API 682, lib 2,627, components 2,767, pages 162). CSS adds 31 lines. Backend is 3,309, above the 3,000 target; total remains above 6,000. This pass removed safe duplication without removing features. Further reduction needs a broader design pass, not code packing or moving code outside the measured directories.
+
+Largest remaining files:
+
+| File | Non-blank lines | Reason retained |
+| --- | ---: | --- |
+| `src/components/FreeTextStart.tsx` | 419 | Required draft fields, route editing and typed revisions. |
+| `src/components/trip/DayColumns.tsx` | 276 | Drag-and-drop state, day columns and manual item creation. |
+| `src/lib/patch/plan.ts` | 238 | City/day simulation and booked-item invariants. |
+| `src/lib/demo.ts` | 225 | Named demo places, coordinates and labelled seed prices. |
+| `src/components/NewTripForm.tsx` | 219 | Required secondary manual multi-city creation. |

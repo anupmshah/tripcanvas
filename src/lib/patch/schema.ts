@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { PriceOffer } from "../price/types";
+import type { GeoResult } from "../geo/nominatim";
 
 // Nullable rather than optional, so the LLM always emits every key.
 export const Estimate = z
@@ -71,15 +72,7 @@ export const ChatOutput = z.object({
 
 export type PatchOpT = z.infer<typeof PatchOp>;
 export type NewItemT = z.infer<typeof NewItem>;
-export type Geo = {
-  found: boolean;
-  unavailable?: boolean;
-  lat?: number;
-  lng?: number;
-  displayName?: string;
-  countryCode?: string;
-  source?: "wikipedia" | "wikivoyage";
-};
+export type Geo = Omit<GeoResult, "cached">;
 export type AnnotatedOp = PatchOpT & {
   status: "ok" | "skipped";
   reason?: string;

@@ -1,4 +1,4 @@
-export const EXAMPLE = {
+const EXAMPLE = {
   reply: "Short friendly summary of what you changed and anything you could not do.",
   patch: {
     ops: [

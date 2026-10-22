@@ -1,16 +1,8 @@
 import "server-only";
 import { geocode } from "./nominatim";
+import type { Stop } from "@prisma/client";
 
-type StopCtx =
-  | {
-      lat: number | null;
-      lng: number | null;
-      countryCode: string | null;
-      city?: string;
-      country?: string;
-    }
-  | null
-  | undefined;
+type StopCtx = Pick<Stop, "lat" | "lng" | "countryCode" | "city" | "country"> | null | undefined;
 
 /** Verification step: does the place exist on OSM near the stop's city? */
 export async function verifyPlace(query: string, stop: StopCtx, force = false) {

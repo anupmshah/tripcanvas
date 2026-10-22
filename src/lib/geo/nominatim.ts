@@ -112,24 +112,18 @@ export async function geocode(query: string, ctx: GeoCtx = {}): Promise<GeoResul
         }
       }
     if (!data.found && unavailable) return { found: false, cached: false, unavailable: true };
+    const cached = {
+      found: data.found,
+      lat: data.lat ?? null,
+      lng: data.lng ?? null,
+      displayName: data.displayName ?? null,
+      countryCode: data.countryCode ?? null,
+      fetchedAt: new Date(),
+    };
     await prisma.geocodeCache.upsert({
       where: { key },
-      create: {
-        key,
-        found: data.found,
-        lat: data.lat,
-        lng: data.lng,
-        displayName: data.displayName,
-        countryCode: data.countryCode,
-      },
-      update: {
-        found: data.found,
-        lat: data.lat ?? null,
-        lng: data.lng ?? null,
-        displayName: data.displayName ?? null,
-        countryCode: data.countryCode ?? null,
-        fetchedAt: new Date(),
-      },
+      create: { key, ...cached },
+      update: cached,
     });
     return { ...data, cached: false };
   } catch {

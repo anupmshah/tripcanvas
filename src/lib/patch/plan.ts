@@ -5,26 +5,17 @@ import { addDays, diffDays } from "../dates";
 import type { TripDTO } from "../dto";
 import type { PriceOffer } from "../price/types";
 import type { AnnotatedOp, Geo, NewItemT, PatchOpT } from "./schema";
+import type { StopInput } from "../stops";
 
-export type PStop = {
-  id: string;
-  city: string;
-  country: string;
-  countryCode: string | null;
-  lat: number | null;
-  lng: number | null;
-  airport: string | null;
-  localCurrency: string;
-  nights: number;
-};
+export type PStop = Required<StopInput> & { id: string };
 export type AddPayload = { item: NewItemT; geo?: Geo; offer?: PriceOffer };
 export type PItem = { id: string; status: string; add?: AddPayload };
 export type PDay = { id: string; stopId: string; items: PItem[] };
 /** days = one day per night of each stop (in stop order) + a final departure day owned by the last stop. */
 export type PState = { startDate: string; originAirport?: string; stops: PStop[]; days: PDay[] };
-export type StopCtx = { lat: number | null; lng: number | null; countryCode: string | null };
+type StopCtx = Pick<PStop, "lat" | "lng" | "countryCode">;
 
-export const MAX_STOPS = 8;
+const MAX_STOPS = 8;
 
 export function stateFromDTO(dto: TripDTO): PState {
   return {
@@ -63,7 +54,7 @@ function split(S: PState) {
 }
 
 function bookedPositions(S: PState) {
-  const m = new Map<string, { date: string; stopId: string; title?: string }>();
+  const m = new Map<string, { date: string; stopId: string }>();
   S.days.forEach((d, i) =>
     d.items
       .filter((it) => it.status === "booked")

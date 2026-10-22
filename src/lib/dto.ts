@@ -1,12 +1,11 @@
 import type { Item, Stop, Trip } from "@prisma/client";
 import { prisma, type Db } from "./db";
 import { getRates } from "./money/fx";
-import { computeTotals } from "./money/totals";
+import { computeTotals, nightsRemaining } from "./money/totals";
 import { priceLabel } from "./money/priceLabel";
 import { convert } from "./money/currency";
 import { linksForItem } from "./links/deeplinks";
 import { ensureFlightPrices } from "./price/estimate";
-import { nightsRemaining } from "./money/totals";
 
 export type ItemDTO = Omit<Item, "createdAt" | "updatedAt" | "priceFetchedAt"> & {
   priceFetchedAt: string | null;
