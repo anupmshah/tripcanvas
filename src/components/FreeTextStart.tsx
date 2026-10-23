@@ -69,7 +69,14 @@ export default function FreeTextStart() {
           maxLength={2000}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={example}
+          onKeyDown={(e) => {
+            // Tab in an empty box accepts the example, like autocomplete.
+            if (e.key === "Tab" && !e.shiftKey && !text) {
+              e.preventDefault();
+              setText(example);
+            }
+          }}
+          placeholder={`${example}  (press Tab to use this example)`}
         />
         <div className="flex gap-3">
           <button
