@@ -10,8 +10,10 @@ export function haversineKm(a: LL, b: LL) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 /** Rough estimate only: road factor 1.3, walk 4.5 km/h under 1.5 km else 25 km/h. */
-export function legEstimate(a: LL, b: LL) {
+export function legEstimate(a: LL & { type?: string }, b: LL) {
+  if (a.type === "flight" || a.type === "transport") return null;
   const km = haversineKm(a, b) * 1.3;
+  if (km > 100) return null;
   const walk = km < 1.5;
   return {
     km,

@@ -14,6 +14,17 @@ import {
   canReadGeoCache,
 } from "../src/lib/geo/queries";
 import { cityTitles } from "../src/lib/info/wiki";
+import { legEstimate } from "../src/lib/geo/travel";
+it("omits local travel estimates after transport and across intercity distances", () => {
+  const ny = { lat: 40.75, lng: -73.99 };
+  const nearby = { lat: 40.755, lng: -73.985 };
+  expect(legEstimate(ny, nearby)?.mode).toBe("walk");
+  expect(legEstimate(ny, { lat: 40.8, lng: -73.95 })?.mode).toBe("taxi/transit");
+  for (const type of ["flight", "transport"])
+    expect(legEstimate({ ...ny, type }, nearby)).toBeNull();
+  expect(legEstimate(ny, { lat: 38.9, lng: -77.04 })).toBeNull();
+  expect(legEstimate(ny, { lat: 41.46, lng: -73.99 })).toBeNull();
+});
 it("normalises city aliases and removes country qualifiers for guide lookups", () => {
   expect(cityTitles("New York, USA")).toEqual(["New York City", "New York"]);
   expect(cityTitles("NYC, United States")[0]).toBe("New York City");
