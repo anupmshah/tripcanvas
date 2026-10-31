@@ -70,7 +70,20 @@ Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright
 - Child flight searches currently use age 10; extracted child ages can inform the plan and confirmed preferences but are not passed to Duffel. No payments, authentication, collaborative editing or deployment is included.
 - Share links have no expiry/revoke UI. Calendar times have no timezone conversion. PDF output uses browser printing, not a server PDF service.
 - Browser automation was unavailable in this environment. HTTP checks cover the workflows; native drag gestures, clipboard permissions and printed visual layout remain unverified.
-- npm reports 10 dependency audit findings (1 moderate, 9 high). Breaking upgrades were not applied to the pinned stack.
+- npm reports 20 dependency audit findings (15 moderate, 5 high); see the dependency audit below. Breaking upgrades were not applied.
+
+## Dependency audit (2026-10-31)
+
+`npm audit fix` updated 10 `@typescript-eslint` packages from 8.72.0 to 8.72.1 without `--force`. The audit count remains 20 (15 moderate, 5 high). `npm audit --omit=dev` reports 6 (1 moderate, 5 high), including the Prisma CLI's optional peer dependencies; inclusion in that report does not mean every affected function runs on an app request.
+
+| Packages reported | Severity | Exposure in TripCanvas | Why left |
+| --- | --- | --- | --- |
+| `minimatch`, `eslint`, `eslint-config-next`, `@eslint-community/eslint-utils`, `@eslint/config-array`, `@eslint/eslintrc`, `@typescript-eslint/eslint-plugin`, `@typescript-eslint/parser`, `@typescript-eslint/type-utils`, `@typescript-eslint/typescript-estree`, `@typescript-eslint/utils`, `eslint-plugin-import`, `eslint-plugin-jsx-a11y`, `eslint-plugin-react` (14) | Moderate | Dev/build lint tooling; no app request path. Glob amplification can cause denial of service. | Patched minimatch 11 is a major change from the 3/10 versions required here. npm offers breaking ESLint/config downgrades, not a compatible fix. |
+| `deepmerge-ts`, `@prisma/config`, `prisma` (3) | High | Prisma CLI configuration tooling; recursive object merging can exhaust the stack. These packages are marked `devOptional` through Prisma Client's optional CLI peer and also appear in the production audit. Normal app queries use Prisma Client, not CLI config merging. | npm requires Prisma 7.10.1, a breaking upgrade from 6. |
+| `postcss` / `next` (2) | High / moderate | Next bundles PostCSS 8.4.31 for CSS processing during build/dev. Advisories cover CSS output XSS and source-map file reads. The app accepts no user CSS; these processing paths are not used by its production API requests. Root PostCSS 8.5.31 is already patched. | Next pins its nested copy; npm requires Next 16.4.3, a breaking upgrade from 15. |
+| `zod` (1) | High | Runtime reachable: validates API request bodies and model output. Oversized constrained collections can exhaust memory. Localhost binding limits network exposure but does not fix the validation issue. | npm requires Zod 4.6.7, a breaking upgrade from 3. |
+
+No major upgrades or dependency overrides were applied. Remaining advisories: [minimatch](https://github.com/advisories/GHSA-g3hv-75wg-m249), [deepmerge-ts](https://github.com/advisories/GHSA-ggr8-5vv4-36mx), [PostCSS XSS](https://github.com/advisories/GHSA-qx2v-qp2m-jg93), [source-map reads](https://github.com/advisories/GHSA-6g55-p6wh-862q), [incomplete source-map fix](https://github.com/advisories/GHSA-fxqj-rqcc-2cmp), [source-map traversal](https://github.com/advisories/GHSA-r28c-9q8g-f849), [Zod](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5).
 
 ## Formatting and size
 
