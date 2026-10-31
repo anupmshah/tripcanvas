@@ -1,0 +1,8 @@
+{
+  "name": "tripcanvas",
+  "version": "0.1.0",
+  "description": "Install, configure and run the TripCanvas trip planner locally with your own OpenAI key and Postgres database.",
+  "author": { "name": "anupmshah" },
+  "repository": "https://github.com/anupmshah/tripcanvas",
+  "license": "UNLICENSED"
+}

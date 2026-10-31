@@ -1,0 +1,12 @@
+{
+  "name": "tripcanvas",
+  "description": "TripCanvas: plan multi-city trips from a sentence, on your own machine with your own API keys.",
+  "owner": { "name": "anupmshah" },
+  "plugins": [
+    {
+      "name": "tripcanvas",
+      "source": "./plugin/tripcanvas",
+      "description": "Install, configure and run the TripCanvas trip planner locally with your own OpenAI key and Postgres database."
+    }
+  ]
+}

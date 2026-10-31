@@ -13,7 +13,8 @@
     "db:seed": "prisma db seed",
     "smoke": "node scripts/smoke-all.mjs",
     "format": "prettier --write src tests scripts",
-    "format:check": "prettier --check src tests scripts"
+    "format:check": "prettier --check src tests scripts",
+    "check-env": "node --env-file=.env scripts/check-env.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -48,5 +49,8 @@
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "vitest": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=20.6"
   }
 }
