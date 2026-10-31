@@ -31,7 +31,7 @@ npm run dev
 
 Both `DATABASE_URL` (pooled) and `DIRECT_URL` (direct) must select `schema=tripcanvas`. Only that schema belongs to this app. Do not reset the database or alter other schemas. Stop the dev server before Prisma generation on Windows to avoid the query-engine DLL lock.
 
-Open http://localhost:3000. If another local service owns IPv4 port 3000, use `npm run dev -- --hostname ::1 --port 3000`; localhost and http://[::1]:3000 reach this app. Set a useful `NOMINATIM_CONTACT` in `.env`.
+Open http://127.0.0.1:3000 (or http://localhost:3000). Both `npm run dev` and `npm run start` bind only to IPv4 loopback, `127.0.0.1`, by default. If another local service owns IPv4 port 3000, use `npm run dev -- --hostname ::1 --port 3000`; the explicit hostname overrides the default and http://[::1]:3000 reaches this app. `localhost` may resolve to the other IPv4 service, so use the explicit IPv6 URL in that case. The same hostname override works with `npm run start`. Set a useful `NOMINATIM_CONTACT` in `.env`.
 
 ## Try it
 

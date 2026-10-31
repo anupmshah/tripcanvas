@@ -57,7 +57,7 @@ npm run db:seed
 
 ## 4. Start it
 
-Run `npm run dev` as a long-running background process and wait for the line containing `Local:`. Then give the user the URL (normally http://localhost:3000). If port 3000 is busy, Next picks another port; use the one it prints.
+Run `npm run dev` as a long-running background process and wait for the line containing `Local:`. Both `npm run dev` and `npm run start` bind to `127.0.0.1` only. Give the user the printed URL (normally http://127.0.0.1:3000). If port 3000 is busy, Next picks another port; use the one it prints. To use IPv6 loopback explicitly, run `npm run dev -- --hostname ::1 --port 3000` (also supported by `npm run start`) and give http://[::1]:3000; `localhost` may reach a different IPv4 service. Never bind to `0.0.0.0` or `::`.
 
 ## 5. Using it
 
