@@ -170,6 +170,43 @@ export function offerFits(S: PState, index: number, offer: PriceOffer) {
   );
 }
 
+export type OldStay = { id: string; stopId: string; total: number | null; currency: string | null };
+
+/**
+ * A stay swap made to save money (remove reason mentions budget/cheaper, plus a new stay in the same city)
+ * must actually cost less; otherwise both halves are skipped. Totals compare in the same currency only.
+ */
+export function rejectPricierSwaps(ops: AnnotatedOp[], S: PState, oldStays: OldStay[]) {
+  const out = [...ops];
+  out.forEach((op, i) => {
+    if (op.op !== "add" || op.status !== "ok" || op.item.type !== "stay" || !op.item.estimate)
+      return;
+    const e = op.item.estimate;
+    const stopId = S.days[op.dayIndex]?.stopId;
+    const nights = S.stops.find((s) => s.id === stopId)?.nights ?? 1;
+    const total = e.mid * (e.basis === "night" ? nights : 1);
+    const j = out.findIndex(
+      (r) =>
+        r.op === "remove" &&
+        r.status === "ok" &&
+        /budget|cheap/i.test(r.reason) &&
+        oldStays.some(
+          (o) =>
+            o.id === r.itemId &&
+            o.stopId === stopId &&
+            o.total != null &&
+            o.currency === e.currency &&
+            total >= o.total,
+        ),
+    );
+    if (j < 0) return;
+    const reason = "not cheaper than the current stay";
+    out[i] = { ...op, status: "skipped", reason };
+    out[j] = { ...out[j], status: "skipped", reason };
+  });
+  return out;
+}
+
 /**
  * Run ops in order against a copy of the trip. Returns the annotated ops, the final state, and for every `add`
  * the location context (the stop of the day it lands on) so the caller can verify the place on OSM.

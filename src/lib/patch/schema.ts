@@ -64,6 +64,19 @@ export const PrefCandidate = z.object({
   value: z.string().max(200),
   evidence: z.string().max(200),
 });
+const words = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+/** Keep only preferences whose evidence quotes something the user actually typed. */
+export function groundedPrefs<T extends { evidence: string }>(candidates: T[], said: string[]) {
+  const all = ` ${words(said.join(" "))} `;
+  return candidates.filter((p) => {
+    const e = words(p.evidence);
+    return e.length >= 3 && all.includes(` ${e} `);
+  });
+}
 export const ChatOutput = z.object({
   reply: z.string().max(2000),
   patch: Patch,

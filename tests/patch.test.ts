@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { ChatOutput, NewItem, PatchOp, Time } from "../src/lib/patch/schema";
-import { annotateOps, offerFits, type PState } from "../src/lib/patch/plan";
+import { ChatOutput, NewItem, PatchOp, Time, groundedPrefs } from "../src/lib/patch/schema";
+import { annotateOps, offerFits, rejectPricierSwaps, type PState } from "../src/lib/patch/plan";
 import { retryConflict } from "../src/lib/db";
 import { jsonCorrections } from "../src/lib/llm/openai";
 
@@ -180,5 +180,67 @@ describe("patch validation and booked protection", () => {
     const r = annotateOps(s, [{ op: "reorderStops", stopIds: ["b", "a"] }]);
     expect(r.ops[0].status).toBe("skipped");
     expect(r.state).toEqual(s);
+  });
+});
+
+describe("budget swaps and preference grounding", () => {
+  const S: PState = {
+    startDate: "2026-12-17",
+    stops: [
+      {
+        id: "ny",
+        city: "New York",
+        country: "USA",
+        countryCode: "us",
+        lat: 0,
+        lng: 0,
+        airport: "JFK",
+        localCurrency: "USD",
+        nights: 5,
+      },
+    ],
+    days: Array.from({ length: 6 }, (_, i) => ({ id: `d${i}`, stopId: "ny", items: [] })),
+  };
+  const swap = (nightly: number) =>
+    [
+      { op: "remove", itemId: "old", reason: "over budget - swap for cheaper stay", status: "ok" },
+      {
+        op: "add",
+        dayIndex: 0,
+        position: null,
+        status: "ok",
+        item: {
+          type: "stay",
+          title: "Hotel stay at Pod 51",
+          placeQuery: null,
+          start: null,
+          end: null,
+          notes: null,
+          offerId: null,
+          estimate: { low: nightly, mid: nightly, high: nightly, currency: "USD", basis: "night" },
+        },
+      },
+    ] as Parameters<typeof rejectPricierSwaps>[0];
+  const old = [{ id: "old", stopId: "ny", total: 3000, currency: "USD" }];
+
+  it("skips a 'cheaper' stay swap that costs more for the stay", () => {
+    const out = rejectPricierSwaps(swap(1020), S, old); // 1020 x 5 = 5100 > 3000
+    expect(out.map((o) => o.status)).toEqual(["skipped", "skipped"]);
+    expect(out[1].reason).toBe("not cheaper than the current stay");
+  });
+  it("keeps a stay swap that is actually cheaper", () => {
+    const out = rejectPricierSwaps(swap(400), S, old); // 400 x 5 = 2000 < 3000
+    expect(out.map((o) => o.status)).toEqual(["ok", "ok"]);
+  });
+  it("drops preferences whose evidence the user never said", () => {
+    const said = ["Plan a USA trip for 2 adults and 1 kid. We are vegetarians."];
+    const kept = groundedPrefs(
+      [
+        { field: "food", value: "vegetarian", evidence: "we are vegetarians" },
+        { field: "pace", value: "relaxed", evidence: "we hate early starts" },
+      ],
+      said,
+    );
+    expect(kept.map((p) => p.field)).toEqual(["food"]);
   });
 });

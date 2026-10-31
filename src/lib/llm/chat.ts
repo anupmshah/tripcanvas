@@ -2,8 +2,8 @@ import "server-only";
 import { prisma } from "../db";
 import { getTripDTO } from "../dto";
 import { geocode } from "../geo/nominatim";
-import { annotateOps, stateFromDTO } from "../patch/plan";
-import { ChatOutput } from "../patch/schema";
+import { annotateOps, rejectPricierSwaps, stateFromDTO } from "../patch/plan";
+import { ChatOutput, groundedPrefs } from "../patch/schema";
 import { callJson } from "./openai";
 import { SYSTEM } from "./prompts";
 import { flightsForTrip } from "../price/legs";
@@ -41,7 +41,7 @@ export async function chat(tripId: string, message: string, mode: string, instru
     ),
   );
   const first = annotateOps(stateFromDTO(dto), raw, offers);
-  const ops = await Promise.all(
+  const located = await Promise.all(
     first.ops.map(async (op, i) => {
       if (op.op !== "add" || op.status !== "ok") return op;
       const ctx = first.ctx[i];
@@ -59,12 +59,23 @@ export async function chat(tripId: string, message: string, mode: string, instru
       return { ...op, geo };
     }),
   );
+  const ops = rejectPricierSwaps(
+    located,
+    first.state,
+    dto.days.flatMap((d) =>
+      d.items
+        .filter((i) => i.type === "stay")
+        .map((i) => ({ id: i.id, stopId: d.stopId, total: i.price, currency: i.currency })),
+    ),
+  );
+  const said = [...history.filter((m) => m.role === "user").map((m) => m.content), message];
+  const prefs = groundedPrefs(output.preferenceCandidates, said);
   const patch = await prisma.$transaction(async (tx) => {
     const p = await tx.pendingPatch.create({
       data: {
         tripId,
         opsJson: JSON.stringify(ops),
-        prefsJson: JSON.stringify(output.preferenceCandidates),
+        prefsJson: JSON.stringify(prefs),
       },
     });
     await tx.chatMessage.createMany({
@@ -78,6 +89,6 @@ export async function chat(tripId: string, message: string, mode: string, instru
   return {
     reply: output.reply,
     patch: { id: patch.id, ops },
-    preferenceCandidates: output.preferenceCandidates,
+    preferenceCandidates: prefs,
   };
 }

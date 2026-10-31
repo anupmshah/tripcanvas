@@ -8,6 +8,7 @@ import { applyPatch } from "../patch/apply";
 import { callJson } from "./openai";
 import { LlmInvalidOutput } from "./openai";
 import { chat } from "./chat";
+import { groundedPrefs } from "../patch/schema";
 import { DraftFields, TripDraft, resolveDraftDates, type TripDraftT } from "./draft";
 
 export async function proposeTrip(text: string, previous?: TripDraftT, change?: string) {
@@ -18,7 +19,7 @@ export async function proposeTrip(text: string, previous?: TripDraftT, change?: 
       content: `Extract intent and propose a practical multi-city trip. Return one JSON object with EVERY key:
 {destination:string|null,originAirport:IATA,adults:number,children:number,infants:number,childAges:number[],lengthDays:number|null,earliest:YYYY-MM-DD|null,latest:YYYY-MM-DD|null,startDate:YYYY-MM-DD|null,endDate:YYYY-MM-DD|null,dateReason:string,budgetAmount:number|null,budgetCurrency:ISO,interests:string,food:string,pace:relaxed|balanced|packed,firstVisit:boolean,notes:string,route:[{city:string,country:string,airport:IATA|null,localCurrency:ISO,nights:integer,transport:flight|train|bus|car|null}],preferenceCandidates:[{field:budgetStyle|pace|interests|food|party|homeAirport|dislikes,value:string,evidence:string}]}.
 Today is ${today()}. Use upcoming dates when the year is omitted. Dec 15 to Jan 5 crosses a year boundary. Distinguish WINDOW from fixed dates: preserve earliest/latest and PICK concrete start/end INSIDE it, explaining the choice without claiming cheaper fares or availability. lengthDays is INCLUSIVE days: 15 days = 14 nights; end=start+14. Sum route nights to lengthDays-1. Provide 3-4 cities for a first-time 15-day USA family trip, logical geography, season and family pace; choose real cities and IATA airports. First city's transport=null; others describe arrival mode. Use 1-8 cities; 1-30 nights each. A typed change revises the prior draft before creation; keep other intent.
-Use Profile.homeAirport by default. Party defaults 2 adults if unspecified. children excludes infants under 2; infants defaults 0. Extract infants separately and never double count them. Budget is OPTIONAL: null if not supplied, currency=profile.displayCurrency. Unknown child ages=[]; no need to ask to plan (flight search currently assumes age 10 if unknown). Missing food/interests/pace use profile. Only destination, duration, or missing date/window can block: retain nulls when absent. Do NOT ask about budget, interests or child ages. Stable user-stated preferences go in preferenceCandidates for confirmation, not automatic saving. Vegetarian -> food; family/ages -> party; first-time destination -> interests. Do not invent the child's age. No prices or opening hours.
+Use Profile.homeAirport by default. Party defaults 2 adults if unspecified. children excludes infants under 2; infants defaults 0. Extract infants separately and never double count them. Budget is OPTIONAL: null if not supplied, currency=profile.displayCurrency. Unknown child ages=[]; no need to ask to plan (flight search currently assumes age 10 if unknown). Missing food/interests/pace use profile. Only destination, duration, or missing date/window can block: retain nulls when absent. Do NOT ask about budget, interests or child ages. Stable user-stated preferences go in preferenceCandidates for confirmation, not automatic saving; evidence is the user's exact words copied verbatim. Vegetarian -> food; family/ages -> party; first-time destination -> interests. Do not invent the child's age. No prices or opening hours.
 Profile: ${JSON.stringify(profile)}`,
     },
     {
@@ -67,7 +68,9 @@ Search offers supplied by the server FIRST; include outbound and return flights 
     if (!result) throw new Error("Trip not found");
     const prefs = [
       ...new Map(
-        [...d.preferenceCandidates, ...result.preferenceCandidates].map((p) => [p.field, p]),
+        groundedPrefs([...d.preferenceCandidates, ...result.preferenceCandidates], [text]).map(
+          (p) => [p.field, p],
+        ),
       ).values(),
     ];
     await prisma.pendingPatch.update({
@@ -88,7 +91,7 @@ Search offers supplied by the server FIRST; include outbound and return flights 
       data: {
         tripId: trip.id,
         opsJson: "[]",
-        prefsJson: JSON.stringify(d.preferenceCandidates),
+        prefsJson: JSON.stringify(groundedPrefs(d.preferenceCandidates, [text])),
         status: "applied",
       },
     });
