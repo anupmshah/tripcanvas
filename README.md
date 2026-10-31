@@ -2,6 +2,23 @@
 
 Describe a trip, review an editable multi-city route, then generate an itinerary. Chat proposes changes for review; booked items stay locked. Next.js 15, React 19, Prisma 6, Neon Postgres, Leaflet/OpenStreetMap and dnd-kit. Windows, npm, Node 22 LTS.
 
+## What you'll need
+
+TripCanvas runs on your computer and uses **your own** accounts. Nothing is shared with the author. Get these ready before installing:
+
+| Credential (in `.env`) | Required | Cost | Where to get it |
+| --- | --- | --- | --- |
+| `OPENAI_API_KEY` | Yes | Pay-as-you-go; the account needs billing credit | [platform.openai.com](https://platform.openai.com/api-keys) → API keys → Create new secret key |
+| `DATABASE_URL` | Yes | Free tier is enough | Any PostgreSQL. Easiest: [neon.tech](https://neon.tech) → new project → **Connect** → choose **Prisma** → copy the **pooled** string (host contains `-pooler`) and add `&schema=tripcanvas` |
+| `DIRECT_URL` | Yes | — | Same Neon screen with connection pooling **off** (direct string), plus `&schema=tripcanvas`. For a plain Postgres server, use the same value as `DATABASE_URL` |
+| `NOMINATIM_CONTACT` | Yes | Free | Your email address or website. OpenStreetMap's geocoding policy asks every app to identify itself |
+| `DUFFEL_ACCESS_TOKEN` | No | Free test token; live fares need a Duffel account | [duffel.com](https://duffel.com) → Developers → Access tokens. Without it, flights show labelled AI estimates plus Google Flights / Skyscanner links |
+| `OPENAI_MODEL` | No | — | Defaults to `gpt-4.1` |
+
+You also need **Node.js 20.6 or later** and **git**. Weather (Open-Meteo), maps (OpenStreetMap), city guides (Wikivoyage/Wikipedia) and exchange rates need no keys.
+
+Run `npm run check-env` at any time: it tests each credential and prints only `ok` / `FAIL`, never the values. Keep `.env` private; it is git-ignored.
+
 ## Install with Claude Code (easiest)
 
 TripCanvas runs on your own computer with your own keys. In Claude Code:
