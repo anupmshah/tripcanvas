@@ -8,7 +8,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     include: { day: { include: { stop: true } } },
   });
   if (!item) return err(404, "Item not found");
-  const geo = await verifyPlace(item.placeQuery ?? item.title, item.day.stop, true);
+  const geo = await verifyPlace(item, item.day.stop, true);
   const result = await prisma.item.updateMany({
     where: { id: item.id, dayId: item.dayId },
     data: geo,

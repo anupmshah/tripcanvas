@@ -12,6 +12,7 @@ export type GeoResult = {
   countryCode?: string;
   cached: boolean;
   unavailable?: boolean;
+  unspecified?: boolean;
   source?: "wikipedia" | "wikivoyage";
 };
 export type GeoCtx = {
@@ -20,6 +21,7 @@ export type GeoCtx = {
   city?: string;
   country?: string;
   force?: boolean;
+  title?: string;
 };
 
 // Nominatim policy: max 1 request/second. Serialised through a promise chain that survives HMR.
@@ -40,7 +42,8 @@ function throttled<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 export async function geocode(query: string, ctx: GeoCtx = {}): Promise<GeoResult> {
-  const [q, name] = verificationQueries(query, ctx);
+  const [q, name, ...aliases] = verificationQueries(query, ctx, ctx.title);
+  if (!name) return { found: false, cached: false, unspecified: true };
   const box = ctx.near
     ? `&viewbox=${ctx.near.lng - 0.75},${ctx.near.lat + 0.75},${ctx.near.lng + 0.75},${ctx.near.lat - 0.75}&bounded=1`
     : "";
@@ -89,9 +92,12 @@ export async function geocode(query: string, ctx: GeoCtx = {}): Promise<GeoResul
     };
     let rows = await attempt(base);
     if (!rows.length && ctx.near)
-      rows = await attempt(
-        `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=1&q=${encodeURIComponent(name)}${cc}${box}`,
-      );
+      for (const candidate of [name, ...aliases]) {
+        rows = await attempt(
+          `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&addressdetails=1&q=${encodeURIComponent(candidate)}${cc}${box}`,
+        );
+        if (rows.length) break;
+      }
     const top = rows[0];
     let data: Omit<GeoResult, "cached"> = top
       ? {

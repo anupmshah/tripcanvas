@@ -47,15 +47,13 @@ export async function chat(tripId: string, message: string, mode: string, instru
       const ctx = first.ctx[i];
       const day = first.state.days[op.dayIndex];
       const stop = first.state.stops.find((s) => s.id === day?.stopId);
-      const geo = await geocode(
-        op.item.placeQuery ?? `${op.item.title}, ${stop?.city}, ${stop?.country}`,
-        {
-          near: ctx?.lat != null && ctx.lng != null ? { lat: ctx.lat, lng: ctx.lng } : null,
-          countryCode: ctx?.countryCode,
-          city: stop?.city,
-          country: stop?.country,
-        },
-      );
+      const geo = await geocode(op.item.placeQuery ?? "", {
+        title: op.item.title,
+        near: ctx?.lat != null && ctx.lng != null ? { lat: ctx.lat, lng: ctx.lng } : null,
+        countryCode: ctx?.countryCode,
+        city: stop?.city,
+        country: stop?.country,
+      });
       return { ...op, geo };
     }),
   );

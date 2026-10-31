@@ -119,7 +119,13 @@ function newItemData({ item, geo, offer }: AddPayload, nights = 1) {
   const { estimate, offerId: _offerId, ...fields } = item;
   const geoData = geo?.found
     ? { lat: geo.lat, lng: geo.lng, geoStatus: geo.source ?? "ok" }
-    : { geoStatus: geo?.unavailable || !geo ? "pending" : "unresolved" };
+    : {
+        geoStatus: geo?.unspecified
+          ? "unspecified"
+          : geo?.unavailable || !geo
+            ? "pending"
+            : "unresolved",
+      };
   const base = {
     ...fields,
     stayNights: item.type === "stay" ? nights : null,

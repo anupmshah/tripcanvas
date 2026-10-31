@@ -1,8 +1,46 @@
-export function verificationQueries(query: string, ctx: { city?: string; country?: string }) {
-  const name = query.split(",")[0].trim();
+export function verificationQueries(
+  query: string,
+  ctx: { city?: string; country?: string },
+  title = "",
+) {
+  const clean = (s: string) =>
+    s
+      .split(",")[0]
+      .trim()
+      .replace(
+        /^(?:(?:cheaper|budget|vegetarian|vegan)\s+)*(?:hotel stay|stay|breakfast|lunch|dinner|meal|italian)\s+at\s+/i,
+        "",
+      )
+      .replace(/^(?:visit|stroll(?: through)?|tour(?: of)?)\s+/i, "")
+      .replace(/\s+(?:stroll|visit|walk|tour)$/i, "");
+  const weak = (s: string) =>
+    !s ||
+    words(s) === words(ctx.city ?? "") ||
+    /^(?:(?:budget|cheaper|vegetarian|vegan)\s+)*(?:hotel(?: stay)?|stay|breakfast|lunch|dinner|meal|restaurant|activity|sightseeing)(?:\s+in\b.*)?$/i.test(
+      s,
+    );
+  let name = clean(query);
+  if (weak(name)) {
+    name = clean(title);
+    query = "";
+  }
+  if (weak(name)) return ["", ""];
+  const short = name.replace(
+    /\s+(?:(?:vegetarian|vegan|italian|sushi)\s+)*(?:restaurant|bar|kitchen|marketplace)$/i,
+    "",
+  );
   return [
-    query.includes(",") ? query.trim() : [name, ctx.city, ctx.country].filter(Boolean).join(", "),
+    query.includes(",")
+      ? [
+          name,
+          ...query
+            .split(",")
+            .slice(1)
+            .map((s) => s.trim()),
+        ].join(", ")
+      : [name, ctx.city, ctx.country].filter(Boolean).join(", "),
     name,
+    ...(short !== name && !weak(short) ? [short] : []),
   ];
 }
 const words = (s: string) =>

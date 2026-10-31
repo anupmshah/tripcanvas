@@ -5,8 +5,13 @@ import type { Stop } from "@prisma/client";
 type StopCtx = Pick<Stop, "lat" | "lng" | "countryCode" | "city" | "country"> | null | undefined;
 
 /** Verification step: does the place exist on OSM near the stop's city? */
-export async function verifyPlace(query: string, stop: StopCtx, force = false) {
-  const g = await geocode(query, {
+export async function verifyPlace(
+  item: { title: string; placeQuery?: string | null },
+  stop: StopCtx,
+  force = false,
+) {
+  const g = await geocode(item.placeQuery ?? "", {
+    title: item.title,
     near: stop?.lat != null && stop.lng != null ? { lat: stop.lat, lng: stop.lng } : null,
     countryCode: stop?.countryCode,
     city: stop?.city,
@@ -15,7 +20,7 @@ export async function verifyPlace(query: string, stop: StopCtx, force = false) {
   });
   if (g.found) return { geoStatus: g.source ?? "ok", lat: g.lat ?? null, lng: g.lng ?? null };
   return {
-    geoStatus: g.unavailable ? ("pending" as const) : ("unresolved" as const),
+    geoStatus: g.unspecified ? "unspecified" : g.unavailable ? "pending" : "unresolved",
     lat: null,
     lng: null,
   };

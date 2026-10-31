@@ -52,10 +52,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       priceFetchedAt: new Date(offer.fetchedAt),
     };
   }
-  const geo = await verifyPlace(
-    d.placeQuery || `${d.title}, ${day.stop.city}, ${day.stop.country}`,
-    day.stop,
-  );
+  const geo = await verifyPlace(d, day.stop);
   const order = await prisma.item.count({ where: { dayId: day.id } });
   const item = await prisma.item.create({
     data: {

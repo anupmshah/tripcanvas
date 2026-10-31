@@ -15,6 +15,16 @@ import {
 } from "../src/lib/geo/queries";
 import { cityTitles } from "../src/lib/info/wiki";
 import { legEstimate } from "../src/lib/geo/travel";
+import { verifyPlace } from "../src/lib/geo/verify";
+it("keeps generic stays neutral with no invented coordinates, including re-verification", async () => {
+  expect(
+    await verifyPlace({ title: "Hotel stay in New York", placeQuery: "Hotel" }, null, true),
+  ).toEqual({
+    geoStatus: "unspecified",
+    lat: null,
+    lng: null,
+  });
+});
 it("omits local travel estimates after transport and across intercity distances", () => {
   const ny = { lat: 40.75, lng: -73.99 };
   const nearby = { lat: 40.755, lng: -73.985 };
@@ -29,6 +39,34 @@ it("normalises city aliases and removes country qualifiers for guide lookups", (
   expect(cityTitles("New York, USA")).toEqual(["New York City", "New York"]);
   expect(cityTitles("NYC, United States")[0]).toBe("New York City");
   expect(cityTitles("Porto, Portugal")).toEqual(["Porto"]);
+});
+it("searches named places without itinerary wording and distinguishes placeholders", () => {
+  const ctx = { city: "New York", country: "USA" };
+  for (const [title, name] of [
+    ["Hotel stay at Hilton Garden Inn", "Hilton Garden Inn"],
+    ["Vegetarian Italian at Carmine's", "Carmine's"],
+    ["Vegetarian dinner at Shizen Vegan Sushi Bar", "Shizen Vegan Sushi Bar"],
+    ["Ferry Building Marketplace stroll", "Ferry Building Marketplace"],
+    ["Visit Central Park", "Central Park"],
+  ]) {
+    expect(verificationQueries("", ctx, title).slice(0, 2)).toEqual([
+      `${name}, New York, USA`,
+      name,
+    ]);
+  }
+  expect(verificationQueries("New York, USA", ctx, "Hotel stay at LIC Hotel")[1]).toBe("LIC Hotel");
+  expect(verificationQueries("LIC Hotel, New York, USA", ctx, "Stay at Hilton")[1]).toBe(
+    "LIC Hotel",
+  );
+  for (const query of ["Hotel stay in New York", "Hotel, New York, USA", "New York", ""])
+    expect(verificationQueries(query, ctx)).toEqual(["", ""]);
+  expect(verificationQueries("Imaginary Hotel 9z71q", ctx)[1]).toBe("Imaginary Hotel 9z71q");
+  for (const [query, alias] of [
+    ["Carmine's Italian Restaurant", "Carmine's"],
+    ["Shizen Vegan Sushi Bar", "Shizen"],
+    ["Ferry Building Marketplace", "Ferry Building"],
+  ])
+    expect(verificationQueries(query, ctx)[2]).toBe(alias);
 });
 it("tries a complete place query before the bounded name and accepts only a relevant wiki match", () => {
   expect(verificationQueries("Magic Kingdom Park", { city: "Orlando", country: "USA" })).toEqual([

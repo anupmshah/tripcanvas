@@ -60,6 +60,9 @@ export default function ItemCard({
         {["wikipedia", "wikivoyage"].includes(item.geoStatus) && (
           <span>Verified via {item.geoStatus}</span>
         )}
+        {item.geoStatus === "unspecified" && (
+          <span className="text-slate-500">No specific place yet</span>
+        )}
         {(item.start || item.end) && (
           <span className="text-slate-500">
             {item.start}

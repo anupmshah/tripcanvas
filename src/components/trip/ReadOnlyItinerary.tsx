@@ -50,8 +50,12 @@ export default function ReadOnlyItinerary({ dto }: { dto: TripDTO }) {
                 </span>
               </h3>
               <PriceLabel item={i} displayCurrency={totals.displayCurrency} />
-              {!locationVerified(i.geoStatus) && (
-                <p className="text-xs text-amber-800">Location not verified</p>
+              {i.geoStatus === "unspecified" ? (
+                <p className="text-xs text-slate-500">No specific place yet</p>
+              ) : (
+                !locationVerified(i.geoStatus) && (
+                  <p className="text-xs text-amber-800">Location not verified</p>
+                )
               )}
               {i.notes && <p>{i.notes}</p>}
             </article>

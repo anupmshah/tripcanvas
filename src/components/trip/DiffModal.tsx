@@ -68,7 +68,9 @@ export default function DiffModal({
                 <div>
                   {o.geo?.found
                     ? `Verified via ${o.geo.source ?? "OpenStreetMap"}`
-                    : "Location not verified"}
+                    : o.geo?.unspecified
+                      ? "No specific place yet"
+                      : "Location not verified"}
                 </div>
               </>
             )}
